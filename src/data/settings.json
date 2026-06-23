@@ -1,0 +1,21 @@
+{
+  "address": "Hartigova 77, 130 00 Praha 3-Žižkov",
+  "phone": "+420 222 000 000",
+  "instagramUrl": "https://instagram.com/chocochoo.prague",
+  "email": "praha@chocochoo.com",
+  "openingHours": {
+    "Monday": { "open": "16:00", "close": "02:00", "closed": false },
+    "Tuesday": { "open": "16:00", "close": "02:00", "closed": false },
+    "Wednesday": { "open": "16:00", "close": "02:00", "closed": false },
+    "Thursday": { "open": "16:00", "close": "02:00", "closed": false },
+    "Friday": { "open": "16:00", "close": "02:00", "closed": false },
+    "Saturday": { "open": "16:00", "close": "02:00", "closed": false },
+    "Sunday": { "open": "16:00", "close": "02:00", "closed": false }
+  },
+  "heroTitle": "Vítejte v Choco Choo",
+  "heroSubtitle": "Ručně dělané palačinky, vafle, crofle a další — z prémiové belgické čokolády.",
+  "announcement": {
+    "text": "Právě jsme otevřeli — přijďte ochutnat! 🍫",
+    "visible": true
+  }
+}

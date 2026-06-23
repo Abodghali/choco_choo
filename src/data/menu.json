@@ -1,0 +1,1107 @@
+[
+  {
+    "category": "Crepe, Waffle, Croffle",
+    "items": [
+      {
+        "id": "nutella",
+        "name": "Nutella",
+        "englishName": "Nutella",
+        "description": "Palačinka, vafle nebo crofle s nutellou a křupavou rýží Rice Krispies, přelité bohatou belgickou bílou čokoládou.",
+        "englishDescription": "A delightful treat topped with Nutella and crispy Rice Krispies, drizzled with rich white Belgian chocolate. Available as crepe, waffle or croffle.",
+        "price": 150,
+        "image": "/menu/nutella.jpg",
+        "available": true
+      },
+      {
+        "id": "kinder-ecstasy",
+        "name": "Kinder Ecstasy",
+        "englishName": "Kinder Ecstasy",
+        "description": "Palačinka, vafle nebo crofle s jahodami, banánem, Kinder Bueno a nutellou, přelité mixem karamelové, bílé a tmavé belgické čokolády.",
+        "englishDescription": "Strawberries, bananas, Kinder Bueno topped with Nutella and a mix of white, caramel and dark Belgian chocolate.",
+        "price": 190,
+        "image": "/menu/kinder-ecstasy.jpg",
+        "available": true
+      },
+      {
+        "id": "berry-fairy-",
+        "name": "Berry Fairy 🧚‍♀️",
+        "englishName": "Berry Fairy 🧚‍♀️",
+        "description": "Palačinka, vafle nebo crofle s jahodami, borůvkami a malinami s krémem, přelité bílou belgickou čokoládou, sypané křupavými ořechy, pistáciemi a karamelovou čokoládou.",
+        "englishDescription": "Strawberries, blueberries and raspberries with creamy cream cheese, drizzled with white Belgian chocolate and topped with crunchy nuts, pistachios and caramel chocolate.",
+        "price": 190,
+        "image": "/menu/berry-fairy.jpg",
+        "available": true
+      },
+      {
+        "id": "sweet-affairs",
+        "name": "Sweet Affairs",
+        "englishName": "Sweet Affairs",
+        "description": "Palačinka, vafle nebo crofle s banánem, jahodami a marshmallow s bílou a mléčnou čokoládou.",
+        "englishDescription": "Banana, strawberries, marshmallow topped with a duo of milk and white chocolate drizzle.",
+        "price": 190,
+        "image": "/menu/sweet-affairs.jpg",
+        "available": true
+      },
+      {
+        "id": "fluff-love",
+        "name": "Fluff Love",
+        "englishName": "Fluff Love",
+        "description": "Marshmallows and chocolate drizzle on your choice of base.",
+        "englishDescription": "Marshmallows and chocolate drizzle on your choice of base.",
+        "price": 175,
+        "image": "/menu/fluff-love.jpg",
+        "available": true
+      },
+      {
+        "id": "maple-obsession",
+        "name": "Maple Obsession",
+        "englishName": "Maple Obsession",
+        "description": "Walnuts, sweet maple syrup, icing sugar, butter and light whipped cream.",
+        "englishDescription": "Walnuts, sweet maple syrup, icing sugar, butter and light whipped cream.",
+        "price": 180,
+        "image": "/menu/maple-obsession.jpg",
+        "available": true
+      },
+      {
+        "id": "lotus-delight",
+        "name": "Lotus Delight",
+        "englishName": "Lotus Delight",
+        "description": "Crunchy Lotus Biscoff biscuits and creamy spread topped with a drizzle of sweet white Belgian chocolate.",
+        "englishDescription": "Crunchy Lotus Biscoff biscuits and creamy spread topped with a drizzle of sweet white Belgian chocolate.",
+        "price": 190,
+        "image": "/menu/lotus-delight.jpg",
+        "available": true
+      },
+      {
+        "id": "classic",
+        "name": "Classic",
+        "englishName": "Classic",
+        "description": "Creamy Belgian milk chocolate and crispy Rice Krispies, drizzled with luscious white Belgian chocolate.",
+        "englishDescription": "Creamy Belgian milk chocolate and crispy Rice Krispies, drizzled with luscious white Belgian chocolate.",
+        "price": 150,
+        "image": "/menu/classic.jpg",
+        "available": true
+      },
+      {
+        "id": "the-minimalist",
+        "name": "The Minimalist",
+        "englishName": "The Minimalist",
+        "description": "Nutella, fresh strawberries, bananas, chopped nuts and Belgian white chocolate.",
+        "englishDescription": "Nutella, fresh strawberries, bananas, chopped nuts and Belgian white chocolate.",
+        "price": 180,
+        "image": "/menu/the-minimalist.jpg",
+        "available": true
+      },
+      {
+        "id": "all-in",
+        "name": "All In",
+        "englishName": "All In",
+        "description": "Milk, white and caramel Belgian chocolate, topped with crispy Rice Krispies, crumbled Oreo, chopped nuts and crunchy caramel pearls, drizzled with rich dark chocolate.",
+        "englishDescription": "Milk, white and caramel Belgian chocolate, topped with crispy Rice Krispies, crumbled Oreo, chopped nuts and crunchy caramel pearls, drizzled with rich dark chocolate.",
+        "price": 190,
+        "image": "/menu/all-in.jpg",
+        "available": true
+      },
+      {
+        "id": "king-oreo-",
+        "name": "King Oreo 👑",
+        "englishName": "King Oreo 👑",
+        "description": "Milk Belgian chocolate, topped with Oreo cookie crumbs and drizzled with white Belgian chocolate.",
+        "englishDescription": "Milk Belgian chocolate, topped with Oreo cookie crumbs and drizzled with white Belgian chocolate.",
+        "price": 190,
+        "image": "/menu/king-oreo.jpg",
+        "available": true
+      },
+      {
+        "id": "sweet-maple-berry",
+        "name": "Sweet Maple & Berry",
+        "englishName": "Sweet Maple & Berry",
+        "description": "Strawberry, raspberry, blueberry, maple syrup, icing sugar and whipped cream.",
+        "englishDescription": "Strawberry, raspberry, blueberry, maple syrup, icing sugar and whipped cream.",
+        "price": 190,
+        "image": "/menu/sweet-maple-berry.jpg",
+        "available": true
+      },
+      {
+        "id": "biscoff-paradise",
+        "name": "Biscoff Paradise",
+        "englishName": "Biscoff Paradise",
+        "description": "Banana, brownie, creamy Biscoff spread, smooth Belgian chocolate and a delightful crunch from Biscoff.",
+        "englishDescription": "Banana, brownie, creamy Biscoff spread, smooth Belgian chocolate and a delightful crunch from Biscoff.",
+        "price": 190,
+        "image": "/menu/biscoff-paradise.jpg",
+        "available": true
+      },
+      {
+        "id": "fruit-s-rainbow",
+        "name": "Fruit's Rainbow",
+        "englishName": "Fruit's Rainbow",
+        "description": "Pineapple, kiwi, strawberries and bananas, drizzled with milk Belgian chocolate, topped with caramelized chopped nuts and a finish of white, dark and caramel chocolate.",
+        "englishDescription": "Pineapple, kiwi, strawberries and bananas, drizzled with milk Belgian chocolate, topped with caramelized chopped nuts and a finish of white, dark and caramel chocolate.",
+        "price": 195,
+        "image": "/menu/fruits-rainbow.jpg",
+        "available": true
+      },
+      {
+        "id": "i-choco-choo",
+        "name": "I ❤️ Choco Choo",
+        "englishName": "I ❤️ Choco Choo",
+        "description": "Brownie bites, strawberries, bananas and dark chocolate mousse mixed with Rice Krispies and Oreo crumbs, topped with milk and creamy white chocolate.",
+        "englishDescription": "Brownie bites, strawberries, bananas and dark chocolate mousse mixed with Rice Krispies and Oreo crumbs, topped with milk and creamy white chocolate.",
+        "price": 200,
+        "image": "/menu/i-love-choco-choo.jpg",
+        "available": true
+      },
+      {
+        "id": "ice-cream-dream",
+        "name": "Ice Cream Dream",
+        "englishName": "Ice Cream Dream",
+        "description": "Two scoops of ice cream (vanilla & chocolate), strawberry, banana and a mix of our Belgian milk, white, caramel and dark chocolate.",
+        "englishDescription": "Two scoops of ice cream (vanilla & chocolate), strawberry, banana and a mix of our Belgian milk, white, caramel and dark chocolate.",
+        "price": 190,
+        "image": "/menu/ice-cream-dream.jpg",
+        "available": true
+      },
+      {
+        "id": "choco-tuccine-crepe-",
+        "name": "Choco-tuccine (Crepe)",
+        "englishName": "Choco-tuccine (Crepe)",
+        "description": "A crepe cut into fettuccine slices, topped with milk Belgian chocolate, salted caramel pearls and Rice Krispies, drizzled with caramel, white and dark chocolate. Served with vanilla ice cream.",
+        "englishDescription": "A crepe cut into fettuccine slices, topped with milk Belgian chocolate, salted caramel pearls and Rice Krispies, drizzled with caramel, white and dark chocolate. Served with vanilla ice cream.",
+        "price": 200,
+        "image": "/menu/choco-tuccine.jpg",
+        "available": true
+      },
+      {
+        "id": "crepe-fruits-ribbon",
+        "name": "Crepe & Fruits Ribbon",
+        "englishName": "Crepe & Fruits Ribbon",
+        "description": "A crepe cut into fettuccine slices, topped with strawberry, red fruits, chopped nuts, pistachio and white Belgian chocolate, drizzled with caramel chocolate. Served with vanilla ice cream.",
+        "englishDescription": "A crepe cut into fettuccine slices, topped with strawberry, red fruits, chopped nuts, pistachio and white Belgian chocolate, drizzled with caramel chocolate. Served with vanilla ice cream.",
+        "price": 200,
+        "image": "/menu/crepe-fruits-ribbon.jpg",
+        "available": true
+      },
+      {
+        "id": "cheesy-pistachio",
+        "name": "Cheesy Pistachio",
+        "englishName": "Cheesy Pistachio",
+        "description": "Your choice of base with cream cheese and strawberry, drizzled with milk chocolate and pistachio spread, topped with pistachio crumbs.",
+        "englishDescription": "Your choice of base with cream cheese and strawberry, drizzled with milk chocolate and pistachio spread, topped with pistachio crumbs.",
+        "price": 180,
+        "image": "/menu/cheesy-pistachio.jpg",
+        "available": true
+      },
+      {
+        "id": "viral-dubai-chocolate-crepe-",
+        "name": "Viral Dubai Chocolate Crepe 🇦🇪",
+        "englishName": "Viral Dubai Chocolate Crepe 🇦🇪",
+        "description": "Filled with pistachio kunafa, topped with pistachio spread, milk Belgian chocolate and pistachio crumbs. Add vanilla pistachio ice cream for extra.",
+        "englishDescription": "Filled with pistachio kunafa, topped with pistachio spread, milk Belgian chocolate and pistachio crumbs. Add vanilla pistachio ice cream for extra.",
+        "price": 220,
+        "image": "/menu/dubai-chocolate-crepe.jpg",
+        "available": true
+      },
+      {
+        "id": "strawberry-dubai-chocolate",
+        "name": "Strawberry Dubai Chocolate",
+        "englishName": "Strawberry Dubai Chocolate",
+        "description": "A sweet fusion of strawberry, Dubai chocolate and pistachio in crepe, waffle or croffle form.",
+        "englishDescription": "A sweet fusion of strawberry, Dubai chocolate and pistachio in crepe, waffle or croffle form.",
+        "price": 210,
+        "image": "/menu/strawberry-dubai.jpg",
+        "available": true
+      },
+      {
+        "id": "make-your-own-crepe-",
+        "name": "Make Your Own Crepe ❤️",
+        "englishName": "Make Your Own Crepe ❤️",
+        "description": "Customize your crepe with a variety of fresh ingredients and toppings.",
+        "englishDescription": "Customize your crepe with a variety of fresh ingredients and toppings.",
+        "price": 200,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "make-your-own-waffle-",
+        "name": "Make Your Own Waffle 💚",
+        "englishName": "Make Your Own Waffle 💚",
+        "description": "Build your own waffle exactly to your taste with our wide range of fresh ingredients and toppings.",
+        "englishDescription": "Build your own waffle exactly to your taste with our wide range of fresh ingredients and toppings.",
+        "price": 200,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "make-your-own-croffle-",
+        "name": "Make Your Own Croffle 💙",
+        "englishName": "Make Your Own Croffle 💙",
+        "description": "Create your own delicious croffle with your preferred fillings.",
+        "englishDescription": "Create your own delicious croffle with your preferred fillings.",
+        "price": 200,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "banana-maki-rolls",
+        "name": "Banana Maki Rolls",
+        "englishName": "Banana Maki Rolls",
+        "description": "Banana sushi rolls served with your choice of premium Belgian chocolate, drizzled with caramel, white and dark chocolate, sprinkled with mini chocolate crunchy pearls.",
+        "englishDescription": "Banana sushi rolls served with your choice of premium Belgian chocolate, drizzled with caramel, white and dark chocolate, sprinkled with mini chocolate crunchy pearls.",
+        "price": 200,
+        "image": "/menu/banana-maki.jpg",
+        "available": true
+      },
+      {
+        "id": "banana-strawberry-maki-rolls",
+        "name": "Banana Strawberry Maki Rolls",
+        "englishName": "Banana Strawberry Maki Rolls",
+        "description": "Sweet crepe rolls filled with banana and strawberry, served with a Belgian chocolate dip, drizzled with caramel, white and dark chocolate, sprinkled with mini chocolate pearls.",
+        "englishDescription": "Sweet crepe rolls filled with banana and strawberry, served with a Belgian chocolate dip, drizzled with caramel, white and dark chocolate, sprinkled with mini chocolate pearls.",
+        "price": 200,
+        "image": "/menu/banana-strawberry-maki.jpg",
+        "available": true
+      },
+      {
+        "id": "brownie-maki-rolls",
+        "name": "Brownie Maki Rolls",
+        "englishName": "Brownie Maki Rolls",
+        "description": "Sweet crepe rolls filled with brownie bites, served with a Belgian chocolate dip and drizzled with caramel, white and dark chocolate. (Ice cream not included.)",
+        "englishDescription": "Sweet crepe rolls filled with brownie bites, served with a Belgian chocolate dip and drizzled with caramel, white and dark chocolate. (Ice cream not included.)",
+        "price": 200,
+        "image": "/menu/brownie-maki.jpg",
+        "available": true
+      },
+      {
+        "id": "maki-rolls-mix",
+        "name": "Maki Rolls Mix",
+        "englishName": "Maki Rolls Mix",
+        "description": "Sweet crepe rolls filled with a mix (banana & strawberry, Dubai chocolate & marshmallow, brownie bites). Served with a Belgian chocolate dip.",
+        "englishDescription": "Sweet crepe rolls filled with a mix (banana & strawberry, Dubai chocolate & marshmallow, brownie bites). Served with a Belgian chocolate dip.",
+        "price": 210,
+        "image": "/menu/maki-mix.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Savory Croffle",
+    "items": [
+      {
+        "id": "turkey-avocado-croffle",
+        "name": "Krůtí a avokádový crofle",
+        "englishName": "Turkey & Avocado Croffle",
+        "description": "Křupavý crofle s plátky krůtí šunky a krémovým avokádem.",
+        "englishDescription": "Sliced turkey and creamy avocado — a fresh and satisfying combination.",
+        "price": 140,
+        "image": "/menu/avocado-croffle.jpg",
+        "available": true
+      },
+      {
+        "id": "tuna-croffle",
+        "name": "Tuňákový crofle",
+        "englishName": "Tuna Croffle",
+        "description": "Křupavý crofle s jemnou tuňákovou směsí.",
+        "englishDescription": "A crispy croffle with a delicate tuna mix.",
+        "price": 140,
+        "image": "/menu/tuna-croffle.jpg",
+        "available": true
+      },
+      {
+        "id": "salmon-croffle",
+        "name": "Lososový crofle",
+        "englishName": "Salmon Croffle",
+        "description": "Křupavý crofle s lososem.",
+        "englishDescription": "Crispy croffle with smoked salmon.",
+        "price": 150,
+        "image": "/menu/salmon-croffle.jpg",
+        "available": true
+      },
+      {
+        "id": "croffle-omelette-fried-eggs",
+        "name": "Crofle s omeletou / sázenými vejci",
+        "englishName": "Croffle Omelette / Fried Eggs",
+        "description": "Křupavý crofle s vejcem a topingy podle vašeho výběru: šunka, avokádo, rajče, ledový salát.",
+        "englishDescription": "A croffle with home-made omelette or fried eggs and your choice of toppings: turkey, avocado, tomato, lettuce.",
+        "price": 140,
+        "image": "/menu/croffle-omelette.jpg",
+        "available": true
+      },
+      {
+        "id": "avocado-croffle-toast",
+        "name": "Avocado Croffle Toast",
+        "englishName": "Avocado Croffle Toast",
+        "description": "Warm crispy croffle topped with smashed avocado, tomato, lemon drizzle, salt & pepper. Add eggs, turkey or cheese.",
+        "englishDescription": "Warm crispy croffle topped with smashed avocado, tomato, lemon drizzle, salt & pepper. Add eggs, turkey or cheese.",
+        "price": 140,
+        "image": "/menu/avocado-croffle.jpg",
+        "available": true
+      },
+      {
+        "id": "cheesy-crepe",
+        "name": "Cheesy Crepe",
+        "englishName": "Cheesy Crepe",
+        "description": "Savory crepe filled with melted cheese, drizzled with pistachio crumbs and honey.",
+        "englishDescription": "Savory crepe filled with melted cheese, drizzled with pistachio crumbs and honey.",
+        "price": 140,
+        "image": "/menu/cheesy-crepe.jpg",
+        "available": true
+      },
+      {
+        "id": "cheesy-biscoff-crepe",
+        "name": "Cheesy Biscoff Crepe",
+        "englishName": "Cheesy Biscoff Crepe",
+        "description": "Sweet crepe filled with mozzarella cheese topped with rich Biscoff spread.",
+        "englishDescription": "Sweet crepe filled with mozzarella cheese topped with rich Biscoff spread.",
+        "price": 140,
+        "image": "/menu/cheesy-biscoff-crepe.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Happy Cups 🫙",
+    "items": [
+      {
+        "id": "strawberry-dubai-chocolate-cup",
+        "name": "Jahodový Dubai pohár",
+        "englishName": "Strawberry Dubai Chocolate Cup",
+        "description": "Pohár plný čerstvých jahod a pistáciového krému, prokládaný dubajskou čokoládou a sypaný drcenými pistáciemi. Zalité belgickou čokoládou s kopečkem vanilkové zmrzliny nebo šlehačkou.",
+        "englishDescription": "Strawberries and pistachio spread, layered with Dubai chocolate and pistachio crumbs, your choice of chocolate, topped with vanilla ice cream or whipped cream.",
+        "price": 180,
+        "image": "/menu/strawberry-dubai-cup.jpg",
+        "available": true
+      },
+      {
+        "id": "chill-guy",
+        "name": "Chill Guy",
+        "englishName": "Chill Guy",
+        "description": "Dva kopečky vanilkové zmrzliny s banánem, jahodami, sušenkami a krémem Lotus Biscoff, doplněné šlehačkou a přelité mléčnou belgickou čokoládou.",
+        "englishDescription": "Two scoops of vanilla ice cream, banana, strawberry, Lotus Biscoff biscuit crunch and spread, whipped cream, drizzled with milk Belgian chocolate.",
+        "price": 170,
+        "image": "/menu/chill-guy.jpg",
+        "available": true
+      },
+      {
+        "id": "cloud-9",
+        "name": "Cloud 9",
+        "englishName": "Cloud 9",
+        "description": "Dva kopečky čokoládové zmrzliny s banánem, jahodami, kousky brownies a šlehačkou, přelité mléčnou belgickou čokoládou.",
+        "englishDescription": "Two scoops of chocolate ice cream, banana, strawberry, brownie bites, whipped cream, drizzled with milk Belgian chocolate.",
+        "price": 170,
+        "image": "/menu/cloud-9.jpg",
+        "available": true
+      },
+      {
+        "id": "strawberry-chocolate",
+        "name": "Jahody & čokoláda",
+        "englishName": "Strawberry & Chocolate",
+        "description": "Miska čerstvých jahod zalitá belgickou čokoládou podle výběru, doplněná kopečkem zmrzliny.",
+        "englishDescription": "A mix of strawberries and your choice of chocolate, topped with a scoop of your choice of ice cream.",
+        "price": 170,
+        "image": "/menu/strawberry-chocolate.jpg",
+        "available": true
+      },
+      {
+        "id": "berry-cream",
+        "name": "Berry-Cream",
+        "englishName": "Berry-Cream",
+        "description": "Strawberry and vanilla ice cream, red fruits, strawberry coulis, pistachios, caramelized nuts and whipped cream, drizzled with white Belgian chocolate.",
+        "englishDescription": "Strawberry and vanilla ice cream, red fruits, strawberry coulis, pistachios, caramelized nuts and whipped cream, drizzled with white Belgian chocolate.",
+        "price": 170,
+        "image": "/menu/berry-cream.jpg",
+        "available": true
+      },
+      {
+        "id": "mango-lisa",
+        "name": "Mango Lisa",
+        "englishName": "Mango Lisa",
+        "description": "Scoop of vanilla ice cream, cheesecake and mango ice cream topped with whipped cream.",
+        "englishDescription": "Scoop of vanilla ice cream, cheesecake and mango ice cream topped with whipped cream.",
+        "price": 170,
+        "image": "/menu/mango-lisa.jpg",
+        "available": true
+      },
+      {
+        "id": "tiramesso-1",
+        "name": "Tiramesso 1",
+        "englishName": "Tiramesso 1",
+        "description": "Vanilla ice cream, tiramisu, chocolate ice cream and 1 shot of espresso, topped with whipped cream.",
+        "englishDescription": "Vanilla ice cream, tiramisu, chocolate ice cream and 1 shot of espresso, topped with whipped cream.",
+        "price": 175,
+        "image": "/menu/tiramesso-1.jpg",
+        "available": true
+      },
+      {
+        "id": "tiramesso-2",
+        "name": "Tiramesso 2",
+        "englishName": "Tiramesso 2",
+        "description": "Vanilla ice cream, tiramisu, strawberry, strawberry ice cream, Biscoff Lotus crumbs, whipped cream.",
+        "englishDescription": "Vanilla ice cream, tiramisu, strawberry, strawberry ice cream, Biscoff Lotus crumbs, whipped cream.",
+        "price": 175,
+        "image": "/menu/tiramesso-2.jpg",
+        "available": true
+      },
+      {
+        "id": "make-your-own-ice-cream-cup-",
+        "name": "Make Your Own Ice Cream Cup 😎",
+        "englishName": "Make Your Own Ice Cream Cup 😎",
+        "description": "Two scoops of ice cream with 3 toppings.",
+        "englishDescription": "Two scoops of ice cream with 3 toppings.",
+        "price": 180,
+        "image": "",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Fresh Baked Cookies 🍪",
+    "items": [
+      {
+        "id": "oreo-cookie",
+        "name": "Oreo sušenka",
+        "englishName": "Oreo Cookie",
+        "description": "Naše domácí sušenka s belgickou čokoládou a drcenými Oreo, podávaná s kopečkem vanilkové zmrzliny.",
+        "englishDescription": "Homemade cookie with Belgian chocolate and Oreo crumbs, served with vanilla ice cream.",
+        "price": 200,
+        "image": "/menu/oreo-cookie.jpg",
+        "available": true
+      },
+      {
+        "id": "pistachio-cookie",
+        "name": "Pistáciová sušenka",
+        "englishName": "Pistachio Cookie",
+        "description": "Naše domácí sušenka s pravou belgickou čokoládou, sypaná drcenými pistáciemi, podávaná s vanilkovou zmrzlinou.",
+        "englishDescription": "Homemade cookie with Belgian chocolate and pistachios, served with vanilla ice cream.",
+        "price": 200,
+        "image": "/menu/pistachio-cookie.jpg",
+        "available": true
+      },
+      {
+        "id": "lotus-cookie",
+        "name": "Lotus sušenka",
+        "englishName": "Lotus Cookie",
+        "description": "Naše domácí sušenka potřená jemným krémem Lotus Biscoff, sypaná drcenými sušenkami, podávaná s vanilkovou zmrzlinou.",
+        "englishDescription": "Homemade cookie with Lotus and crumb, served with Biscoff spread and vanilla ice cream.",
+        "price": 200,
+        "image": "/menu/lotus-cookie.jpg",
+        "available": true
+      },
+      {
+        "id": "cookie-dubai-chocolate-marshmallow",
+        "name": "Sušenka Dubai čokoláda & marshmallow",
+        "englishName": "Cookie Dubai Chocolate Marshmallow",
+        "description": "Domácí sušenka s dubajskou čokoládou, sypaná drcenými pistáciemi a pistáciovou omáčkou, s belgickou čokoládou, kopečkem zmrzliny a marshmallow.",
+        "englishDescription": "Cookie dough + Dubai chocolate base topped with soft marshmallows, baked until gooey, with pistachio sauce, pistachio crumbs and milk Belgian chocolate. 🍫✨",
+        "price": 220,
+        "image": "/menu/cookie-dubai-marshmallow.jpg",
+        "available": true
+      },
+      {
+        "id": "dubai-chocolate-marshmallow-vegetarian-",
+        "name": "Dubai Chocolate Marshmallow (Vegetarian)",
+        "englishName": "Dubai Chocolate Marshmallow (Vegetarian)",
+        "description": "Rich Dubai chocolate base topped with soft marshmallows, pistachio sauce, pistachio crumbs and milk Belgian chocolate. 🍫✨",
+        "englishDescription": "Rich Dubai chocolate base topped with soft marshmallows, pistachio sauce, pistachio crumbs and milk Belgian chocolate. 🍫✨",
+        "price": 220,
+        "image": "/menu/dubai-marshmallow-veg.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Fruits & Fondue",
+    "items": [
+      {
+        "id": "fruit-salad",
+        "name": "Ovocný salát",
+        "englishName": "Fruit Salad",
+        "description": "Lákavá kombinace banánu, kiwi, jahod a ananasu s Nutellou, dozdobená prameny bílé belgické čokolády.",
+        "englishDescription": "Banana, kiwi, strawberry, pineapple and Nutella, drizzled with white Belgian chocolate.",
+        "price": 170,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "fondue-for-one",
+        "name": "Fondue pro jednoho",
+        "englishName": "Fondue for One",
+        "description": "Fondue pro jednoho.",
+        "englishDescription": "Fondue for one person.",
+        "price": 160,
+        "image": "/menu/fruit-salad.jpg",
+        "available": true
+      },
+      {
+        "id": "fondue-for-2-3",
+        "name": "Fondue pro 2-3",
+        "englishName": "Fondue for 2-3",
+        "description": "Fondue pro 2-3 lidi.",
+        "englishDescription": "Fondue for 2-3 people.",
+        "price": 460,
+        "image": "",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Brownie / Cheesecake / Tiramisu",
+    "items": [
+      {
+        "id": "brownie",
+        "name": "Brownie",
+        "englishName": "Brownie",
+        "description": "Pečené podle naší speciální receptury, zalité belgickou čokoládou podle vašeho výběru, podávané s kopečkem vanilkové zmrzliny.",
+        "englishDescription": "Made with our special brownie recipe, covered with your choice of Belgian chocolate. Served with vanilla ice cream.",
+        "price": 120,
+        "image": "/menu/brownie.jpg",
+        "available": true
+      },
+      {
+        "id": "brownie-burger",
+        "name": "Brownie Burger",
+        "englishName": "Brownie Burger",
+        "description": "Burger z našich domácích brownies plněný jahodami, banánem a čokoládovou zmrzlinou, přelitý belgickou čokoládou podle vašeho výběru.",
+        "englishDescription": "A brownie sandwich filled with strawberry, banana and chocolate ice cream, topped with your choice of Belgian chocolate.",
+        "price": 170,
+        "image": "/menu/brownie-burger.jpg",
+        "available": true
+      },
+      {
+        "id": "the-brownie-family",
+        "name": "Brownie Family",
+        "englishName": "The Brownie Family",
+        "description": "Výběr devíti našich domácích brownies v jedinečných kombinacích: bílá čokoláda & pistácie, hořká čokoláda & ořechy, Nutella & M&M&#x27;s, Nutella & Kinder, Lotus Biscoff & sušenky, mléčná & mini marshmallows, mléčná & Rice Krispies, karamelová & čokoládové perličky, bílá čokoláda & Oreo.",
+        "englishDescription": "A selection of nine brownies in unique combinations: white chocolate & pistachios, dark chocolate & nuts, Nutella & M&M's, Nutella & Kinder, Lotus Biscoff, milk chocolate & marshmallows, milk chocolate & Rice Krispies, caramel chocolate & pearls, white chocolate & Oreo.",
+        "price": 430,
+        "image": "/menu/brownie-family.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Hot Drinks ☕",
+    "items": [
+      {
+        "id": "pistachio-hot-chocolate",
+        "name": "Pistachio Hot Chocolate",
+        "englishName": "Pistachio Hot Chocolate",
+        "description": "",
+        "englishDescription": "",
+        "price": 105,
+        "image": "/menu/pistachio-hot-choc.jpg",
+        "available": true
+      },
+      {
+        "id": "nutella-hot-chocolate",
+        "name": "Nutella Hot Chocolate",
+        "englishName": "Nutella Hot Chocolate",
+        "description": "",
+        "englishDescription": "",
+        "price": 95,
+        "image": "/menu/nutella-hot-choc.jpg",
+        "available": true
+      },
+      {
+        "id": "belgian-hot-chocolate",
+        "name": "Belgian Hot Chocolate",
+        "englishName": "Belgian Hot Chocolate",
+        "description": "",
+        "englishDescription": "",
+        "price": 95,
+        "image": "/menu/belgian-hot-choc.jpg",
+        "available": true
+      },
+      {
+        "id": "biscoff-hot-chocolate",
+        "name": "Biscoff Hot Chocolate",
+        "englishName": "Biscoff Hot Chocolate",
+        "description": "",
+        "englishDescription": "",
+        "price": 95,
+        "image": "/menu/biscoff-hot-choc.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Milkshakes 🧋",
+    "items": [
+      {
+        "id": "kinder-bueno-milkshake",
+        "name": "Kinder Bueno Milkshake",
+        "englishName": "Kinder Bueno Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/kinder-bueno-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "strawberry-milkshake",
+        "name": "Strawberry Milkshake",
+        "englishName": "Strawberry Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/strawberry-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "oreo-milkshake",
+        "name": "Oreo Milkshake",
+        "englishName": "Oreo Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/oreo-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "nutella-milkshake",
+        "name": "Nutella Milkshake",
+        "englishName": "Nutella Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/nutella-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "lotus-milkshake",
+        "name": "Lotus Milkshake",
+        "englishName": "Lotus Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/lotus-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "strawberry-banana-milkshake",
+        "name": "Strawberry Banana Milkshake",
+        "englishName": "Strawberry Banana Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/strawberry-banana-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "pistachio-milkshake-",
+        "name": "Pistachio Milkshake 😍",
+        "englishName": "Pistachio Milkshake 😍",
+        "description": "",
+        "englishDescription": "",
+        "price": 95,
+        "image": "/menu/pistachio-shake.jpg",
+        "available": true
+      },
+      {
+        "id": "nutella-banana-milkshake",
+        "name": "Nutella Banana Milkshake",
+        "englishName": "Nutella Banana Milkshake",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/nutella-banana-shake.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Cold Drinks",
+    "items": [
+      {
+        "id": "the-minimalistic-smoothie",
+        "name": "Minimalistický smoothie",
+        "englishName": "The Minimalistic Smoothie",
+        "description": "Jahoda, banán a jogurt.",
+        "englishDescription": "Strawberry, banana and yogurt.",
+        "price": 105,
+        "image": "/menu/minimalistic-smoothie.jpg",
+        "available": true
+      },
+      {
+        "id": "everything-yellow-",
+        "name": "Vše žluté 💛💛",
+        "englishName": "Everything Yellow 💛💛",
+        "description": "Ananas, mango, banán a jogurt.",
+        "englishDescription": "Pineapple, mango, banana and yogurt.",
+        "price": 110,
+        "image": "/menu/everything-yellow-smoothie.jpg",
+        "available": true
+      },
+      {
+        "id": "3-berries-smoothie",
+        "name": "Smoothie 3 bobule",
+        "englishName": "3 Berries Smoothie",
+        "description": "Jahoda, malina, banán a jogurt.",
+        "englishDescription": "Strawberry, raspberry, banana and yogurt.",
+        "price": 115,
+        "image": "/menu/three-berries-smoothie.jpg",
+        "available": true
+      },
+      {
+        "id": "mint-lemonade",
+        "name": "Mátová limonáda",
+        "englishName": "Mint Lemonade",
+        "description": "Domácí limonáda s mátou.",
+        "englishDescription": "Home-made style lemonade with mint.",
+        "price": 85,
+        "image": "/menu/mint-lemonade.jpg",
+        "available": true
+      },
+      {
+        "id": "strawberry-lemonade",
+        "name": "Strawberry Lemonade",
+        "englishName": "Strawberry Lemonade",
+        "description": "Home-made style lemonade with strawberry.",
+        "englishDescription": "Home-made style lemonade with strawberry.",
+        "price": 85,
+        "image": "/menu/strawberry-lemonade.jpg",
+        "available": true
+      },
+      {
+        "id": "raspberry-lemonade",
+        "name": "Raspberry Lemonade",
+        "englishName": "Raspberry Lemonade",
+        "description": "Home-made style lemonade with raspberry.",
+        "englishDescription": "Home-made style lemonade with raspberry.",
+        "price": 85,
+        "image": "/menu/raspberry-lemonade.jpg",
+        "available": true
+      },
+      {
+        "id": "passion-fruit-lemonade",
+        "name": "Passion Fruit Lemonade",
+        "englishName": "Passion Fruit Lemonade",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/passion-lemonade.jpg",
+        "available": true
+      },
+      {
+        "id": "peach-ice-tea",
+        "name": "Peach Ice Tea",
+        "englishName": "Peach Ice Tea",
+        "description": "",
+        "englishDescription": "",
+        "price": 90,
+        "image": "/menu/peach-icetea.jpg",
+        "available": true
+      },
+      {
+        "id": "passion-fruit-ice-tea",
+        "name": "Passion Fruit Ice Tea",
+        "englishName": "Passion Fruit Ice Tea",
+        "description": "",
+        "englishDescription": "",
+        "price": 90,
+        "image": "/menu/passion-icetea.jpg",
+        "available": true
+      },
+      {
+        "id": "watermelon-sprite",
+        "name": "Watermelon Sprite",
+        "englishName": "Watermelon Sprite",
+        "description": "",
+        "englishDescription": "",
+        "price": 85,
+        "image": "/menu/watermelon-sprite.jpg",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Juices",
+    "items": [
+      {
+        "id": "orange-juice",
+        "name": "Orange Juice",
+        "englishName": "Orange Juice",
+        "description": "",
+        "englishDescription": "",
+        "price": 60,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "apple-juice",
+        "name": "Apple Juice",
+        "englishName": "Apple Juice",
+        "description": "",
+        "englishDescription": "",
+        "price": 60,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "mango-juice",
+        "name": "Mango Juice",
+        "englishName": "Mango Juice",
+        "description": "",
+        "englishDescription": "",
+        "price": 60,
+        "image": "",
+        "available": true
+      }
+    ]
+  },
+  {
+    "category": "Add Ons",
+    "items": [
+      {
+        "id": "halal-marshmallow",
+        "name": "Halal marshmallow",
+        "englishName": "Halal Marshmallow",
+        "description": "Za topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "rice-krispies",
+        "name": "Rice Krispies",
+        "englishName": "Rice Krispies",
+        "description": "Za topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "lotus-biscuit-crumbs",
+        "name": "Drcené Lotus sušenky",
+        "englishName": "Lotus Biscuit Crumbs",
+        "description": "Za topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "oreo-crumbs",
+        "name": "Drcené Oreo",
+        "englishName": "Oreo Crumbs",
+        "description": "Za topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "rainbow-sprinkles",
+        "name": "Rainbow Sprinkles",
+        "englishName": "Rainbow Sprinkles",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "salted-caramel-pearls",
+        "name": "Salted Caramel Pearls",
+        "englishName": "Salted Caramel Pearls",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "m-m-s",
+        "name": "M&M's",
+        "englishName": "M&M's",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "kinder",
+        "name": "Kinder",
+        "englishName": "Kinder",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "brownie-bites",
+        "name": "Brownie Bites",
+        "englishName": "Brownie Bites",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 10,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "pistachios",
+        "name": "Pistachios",
+        "englishName": "Pistachios",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "walnut",
+        "name": "Walnut",
+        "englishName": "Walnut",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "strawberry",
+        "name": "Strawberry",
+        "englishName": "Strawberry",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "pineapple",
+        "name": "Pineapple",
+        "englishName": "Pineapple",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "kiwi",
+        "name": "Kiwi",
+        "englishName": "Kiwi",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "red-fruits",
+        "name": "Red Fruits",
+        "englishName": "Red Fruits",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "nutella-2oz",
+        "name": "Nutella 2oz",
+        "englishName": "Nutella 2oz",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "lotus-biscoff-spread",
+        "name": "Lotus Biscoff Spread",
+        "englishName": "Lotus Biscoff Spread",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "milk-chocolate",
+        "name": "Milk Chocolate",
+        "englishName": "Milk Chocolate",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "white-chocolate",
+        "name": "White Chocolate",
+        "englishName": "White Chocolate",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "dark-chocolate",
+        "name": "Dark Chocolate",
+        "englishName": "Dark Chocolate",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "caramel-chocolate",
+        "name": "Caramel Chocolate",
+        "englishName": "Caramel Chocolate",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "maple-syrup",
+        "name": "Maple Syrup",
+        "englishName": "Maple Syrup",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "whipped-cream",
+        "name": "Whipped Cream",
+        "englishName": "Whipped Cream",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "caramelized-nuts",
+        "name": "Caramelized Nuts",
+        "englishName": "Caramelized Nuts",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      },
+      {
+        "id": "banana",
+        "name": "Banana",
+        "englishName": "Banana",
+        "description": "Per topping.",
+        "englishDescription": "Per topping.",
+        "price": 15,
+        "image": "",
+        "available": true
+      }
+    ]
+  }
+]
