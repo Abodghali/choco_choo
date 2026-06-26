@@ -162,7 +162,8 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
             <a href="/admin" className="nav-link">Admin</a>
           </nav>
 
-          <div className="nav-actions">
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <a href="/admin" className="mobile-only-admin">Admin</a>
             {/* Cart Trigger */}
             <button 
               id="cart-trigger-btn"
@@ -455,13 +456,16 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
               <p className="footer-desc" style={{ marginBottom: '15px' }}>
                 Palačinky · Vafle · Crofle · Belgická čokoláda. Zrozeno v Torontu, vyrobeno s láskou a řemeslnou péčí v Žižkově, Praha.
               </p>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <span className={`active-indicator ${isOpen ? 'open' : 'closed'}`} id="store-status-indicator">
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
                   {isOpen ? 'Otevřeno' : 'Zavřeno'}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Dnes: 16:00–02:00</span>
               </div>
+              <a href="/admin" className="btn btn-secondary btn-sm" style={{ fontSize: '11px', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                🔐 Admin Panel
+              </a>
             </div>
 
             <div>

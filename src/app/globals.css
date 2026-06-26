@@ -1071,7 +1071,7 @@ img {
 .qr-addons-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .qr-addon-card {
@@ -1080,11 +1080,10 @@ img {
   align-items: center;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
+  border-radius: 6px;
+  padding: 5px 8px;
   cursor: pointer;
   transition: var(--transition-fast);
-  height: 100%;
 }
 
 .qr-addon-card:hover {
@@ -1093,8 +1092,8 @@ img {
 }
 
 .qr-addon-name {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -1102,11 +1101,39 @@ img {
 }
 
 .qr-addon-price {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--color-gold);
-  margin-left: 8px;
+  margin-left: 6px;
   flex-shrink: 0;
+}
+
+/* Helper for admin link on mobile header */
+.mobile-only-admin {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-only-admin {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color-light);
+    color: var(--text-secondary);
+    font-size: 11px !important;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: var(--transition-fast);
+  }
+  
+  .mobile-only-admin:hover {
+    color: var(--text-primary);
+    border-color: var(--color-gold);
+  }
 }
 
 /* Admin Dashboard CSS Styles */
