@@ -210,13 +210,6 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                   </svg>
                   Objednávejte u pultu — na místě i s sebou
                 </div>
-                <div className="hero-feature">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
-                    <line x1="2" y1="10" x2="22" y2="10"/>
-                  </svg>
-                  Přijímáme hotovost i karty 💳
-                </div>
               </div>
             </div>
           </div>
