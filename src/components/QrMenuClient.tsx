@@ -64,7 +64,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
     <div className="qr-menu-layout">
       {/* QR Welcome Header */}
       <div className="qr-menu-header">
-        <img src="/logo.jpg" alt="Choco Choo" className="qr-menu-logo" style={{ borderRadius: '50%' }} />
+        <img src="/logo.jpg" alt="Choco Choo" className="qr-menu-logo" />
         <h1 className="qr-menu-title">Choco Choo Prague</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
           Palačinky · Vafle · Crofle · Belgická čokoláda
@@ -90,45 +90,66 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
 
       {/* Product List */}
       <div style={{ marginTop: '20px', paddingBottom: '60px' }}>
-        {activeMenu.map((cat) => (
-          <div 
-            key={cat.category} 
-            className="category-block"
-            ref={(el) => { categoryRefs.current[cat.category] = el; }}
-            style={{ marginBottom: '35px', scrollMarginTop: '100px' }}
-          >
-            <h2 className="category-title" style={{ fontSize: '18px', marginBottom: '15px' }}>{cat.category}</h2>
-            <div>
-              {cat.items.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="qr-item-card"
-                  onClick={() => setSelectedItem(item)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {item.image && (
-                    <img src={item.image} alt={item.name} className="qr-item-img" loading="lazy" />
-                  )}
-                  <div className="qr-item-info">
-                    <div>
-                      <h3 className="qr-item-name">{item.name}</h3>
-                      <p className="qr-item-desc">{item.description || 'Čerstvě vyrobený dezert z belgické čokolády.'}</p>
+        {activeMenu.map((cat) => {
+          const categoryNameLower = cat.category.toLowerCase().trim();
+          const isAddonCategory = categoryNameLower === 'add ons' || categoryNameLower === 'addons' || categoryNameLower === 'add-ons';
+          
+          return (
+            <div 
+              key={cat.category} 
+              className="category-block"
+              ref={(el) => { categoryRefs.current[cat.category] = el; }}
+              style={{ marginBottom: '35px', scrollMarginTop: '100px' }}
+            >
+              <h2 className="category-title" style={{ fontSize: '18px', marginBottom: '15px' }}>{cat.category}</h2>
+              <div className={isAddonCategory ? "qr-addons-grid" : "qr-items-grid"}>
+                {cat.items.map((item) => {
+                  if (isAddonCategory) {
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="qr-addon-card"
+                        onClick={() => setSelectedItem(item)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <span className="qr-addon-name">{item.name}</span>
+                        <span className="qr-addon-price">{formatPrice(item.price)}</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div 
+                      key={item.id} 
+                      className="qr-item-card"
+                      onClick={() => setSelectedItem(item)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {item.image && (
+                        <img src={item.image} alt={item.name} className="qr-item-img" loading="lazy" />
+                      )}
+                      <div className="qr-item-info">
+                        <div>
+                          <h3 className="qr-item-name">{item.name}</h3>
+                          <p className="qr-item-desc">{item.description || 'Čerstvě vyrobený dezert z belgické čokolády.'}</p>
+                        </div>
+                        <div className="qr-item-footer">
+                          <span className="qr-item-price">{formatPrice(item.price)}</span>
+                          <span className="qr-item-detail-btn">
+                            <span>Detail</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="qr-item-footer">
-                      <span className="qr-item-price">{formatPrice(item.price)}</span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        Zobrazit detail
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Floating Info */}
