@@ -217,3 +217,136 @@ async function saveLocalSettings(settings: StoreSettings): Promise<boolean> {
     return false;
   }
 }
+
+// -------------------------------------------------------------
+// Orders Management System
+// -------------------------------------------------------------
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;             // Seller Order ID (e.g. ORD-20260711-0001)
+  customerNumber: number; // Customer Order Number (e.g. 1, 2, 3...)
+  items: OrderItem[];
+  totalPrice: number;
+  paymentMethod: 'cash' | 'credit' | 'applepay';
+  status: 'pending' | 'preparing' | 'completed' | 'cancelled';
+  createdAt: string;      // ISO Date string
+  tableOrName?: string;   // Table number or customer name
+  paymentStatus?: 'unpaid' | 'paid' | 'failed';
+  sumupCheckoutId?: string;
+}
+
+const ORDERS_FILE_PATH = path.join(process.cwd(), 'src/data/orders.json');
+
+export async function getOrders(): Promise<Order[]> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('choco_store')
+        .select('value')
+        .eq('key', 'orders')
+        .single();
+      
+      if (data && data.value) {
+        return data.value as Order[];
+      }
+      
+      if (error && error.code === 'PGRST116') {
+        const localOrders = await getLocalOrders();
+        await saveOrders(localOrders);
+        return localOrders;
+      }
+      console.warn("Supabase select orders error, using local fallback:", error);
+    } catch (e) {
+      console.error("Supabase orders connection failed, using local fallback:", e);
+    }
+  }
+  return getLocalOrders();
+}
+
+export async function saveOrders(orders: Order[]): Promise<boolean> {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from('choco_store')
+        .upsert({ key: 'orders', value: orders });
+      
+      if (!error) return true;
+      console.error("Failed to save orders to Supabase:", error);
+    } catch (e) {
+      console.error("Supabase orders upsert failed:", e);
+    }
+  }
+  return saveLocalOrders(orders);
+}
+
+async function getLocalOrders(): Promise<Order[]> {
+  try {
+    if (fs.existsSync(ORDERS_FILE_PATH)) {
+      const content = fs.readFileSync(ORDERS_FILE_PATH, 'utf8');
+      return JSON.parse(content);
+    }
+  } catch (e) {
+    console.error("Error reading local orders file:", e);
+  }
+  return [];
+}
+
+async function saveLocalOrders(orders: Order[]): Promise<boolean> {
+  try {
+    fs.mkdirSync(path.dirname(ORDERS_FILE_PATH), { recursive: true });
+    fs.writeFileSync(ORDERS_FILE_PATH, JSON.stringify(orders, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error("Error writing local orders file:", e);
+    return false;
+  }
+}
+
+export async function createNewOrder(orderData: Omit<Order, 'id' | 'customerNumber' | 'createdAt' | 'status'>): Promise<Order> {
+  const orders = await getOrders();
+  
+  // Get current date in Europe/Prague timezone for resetting customer number daily
+  const pragueDateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Prague' }); // 'YYYY-MM-DD'
+  
+  // Filter today's orders
+  const todaysOrders = orders.filter(o => {
+    try {
+      const orderDate = new Date(o.createdAt).toLocaleDateString('en-CA', { timeZone: 'Europe/Prague' });
+      return orderDate === pragueDateStr;
+    } catch (err) {
+      return false;
+    }
+  });
+  
+  // Next customer sequence number
+  const nextCustomerNumber = todaysOrders.length > 0 
+    ? Math.max(...todaysOrders.map(o => o.customerNumber)) + 1 
+    : 1;
+    
+  // Format seller order ID: ORD-YYYYMMDD-XXXX where XXXX is padded customer number
+  const yyyymmdd = pragueDateStr.replace(/-/g, '');
+  const paddedSeq = String(nextCustomerNumber).padStart(4, '0');
+  const nextOrderId = `ORD-${yyyymmdd}-${paddedSeq}`;
+  
+  const newOrder: Order = {
+    ...orderData,
+    id: nextOrderId,
+    customerNumber: nextCustomerNumber,
+    createdAt: new Date().toISOString(),
+    status: 'pending',
+    paymentStatus: 'unpaid'
+  };
+  
+  orders.push(newOrder);
+  await saveOrders(orders);
+  return newOrder;
+}

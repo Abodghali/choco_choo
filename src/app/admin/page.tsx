@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MenuItem, MenuCategory, StoreSettings, OpeningHours } from '@/lib/db';
+import { MenuItem, MenuCategory, StoreSettings, OpeningHours, Order } from '@/lib/db';
 import { formatPrice } from '@/lib/utils';
 
 export default function AdminPage() {
@@ -14,7 +14,12 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('');
 
   // Tab navigation
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'categories' | 'settings'>('orders');
+
+  // Orders State
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersFilter, setOrdersFilter] = useState<'all' | 'pending' | 'preparing' | 'completed' | 'cancelled'>('all');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // DB Data
   const [menu, setMenu] = useState<MenuCategory[]>([]);
@@ -56,6 +61,7 @@ export default function AdminPage() {
       if (res.status === 200) {
         setAuthenticated(true);
         fetchData();
+        fetchOrders();
       } else {
         setAuthenticated(false);
         setLoading(false);
@@ -63,6 +69,121 @@ export default function AdminPage() {
     } catch (e) {
       setAuthenticated(false);
       setLoading(false);
+    }
+  };
+
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      const playNote = (frequency: number, startTime: number, duration: number) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        
+        osc.frequency.setValueAtTime(frequency, startTime);
+        gain.gain.setValueAtTime(0.1, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.05);
+        
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+      
+      const now = audioContext.currentTime;
+      playNote(523.25, now, 0.15); // C5
+      playNote(783.99, now + 0.15, 0.3); // G5
+    } catch (err) {
+      console.warn("Failed to play order sound notification:", err);
+    }
+  };
+
+  const fetchOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch('/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Play notification sound if a new order arrives and sound is enabled
+        setOrders(prevOrders => {
+          if (soundEnabled && prevOrders.length > 0 && data.length > prevOrders.length) {
+            // Check if there are any new pending orders that weren't there before
+            const newOrders = data.filter((o: any) => o.status === 'pending' && !prevOrders.some(po => po.id === o.id));
+            if (newOrders.length > 0) {
+              playNotificationSound();
+            }
+          }
+          return data;
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch orders:", e);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  // Polling for orders every 10 seconds
+  useEffect(() => {
+    if (!authenticated) return;
+    
+    const interval = setInterval(() => {
+      fetchOrders(true);
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [authenticated, soundEnabled]);
+
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status })
+      });
+      if (res.ok) {
+        showToast('Stav objednávky aktualizován');
+        fetchOrders(true);
+      } else {
+        showToast('Chyba při aktualizaci stavu');
+      }
+    } catch (e) {
+      showToast('Chyba komunikace při aktualizaci stavu');
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm('Opravdu chcete smazat tuto objednávku?')) return;
+    try {
+      const res = await fetch(`/api/orders?id=${orderId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        showToast('Objednávka smazána');
+        fetchOrders(true);
+      } else {
+        showToast('Chyba při mazání objednávky');
+      }
+    } catch (e) {
+      showToast('Chyba komunikace při mazání objednávky');
+    }
+  };
+
+  const clearAllOrders = async () => {
+    if (!confirm('Opravdu chcete smazat VŠECHNY objednávky z historie? Tento krok nelze vrátit.')) return;
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        showToast('Všechny objednávky byly smazány');
+        fetchOrders(true);
+      } else {
+        showToast('Chyba při mazání historie objednávek');
+      }
+    } catch (e) {
+      showToast('Chyba komunikace');
     }
   };
 
@@ -557,6 +678,28 @@ export default function AdminPage() {
         {/* Sidebar Nav */}
         <aside className="admin-sidebar">
           <button 
+            className={`admin-nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+            style={{ position: 'relative' }}
+          >
+            📦 <span>Objednávky</span>
+            {orders.filter(o => o.status === 'pending').length > 0 && (
+              <span style={{ 
+                position: 'absolute', 
+                top: '5px', 
+                right: '10px', 
+                backgroundColor: 'var(--color-accent)', 
+                color: '#fff', 
+                borderRadius: '50%', 
+                padding: '2px 6px', 
+                fontSize: '10px', 
+                fontWeight: 'bold' 
+              }}>
+                {orders.filter(o => o.status === 'pending').length}
+              </span>
+            )}
+          </button>
+          <button 
             className={`admin-nav-btn ${activeTab === 'products' ? 'active' : ''}`}
             onClick={() => setActiveTab('products')}
           >
@@ -579,6 +722,258 @@ export default function AdminPage() {
         {/* Content Panel */}
         <main className="admin-content">
           
+          {/* TAB 0: ORDERS MANAGER */}
+          {activeTab === 'orders' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '25px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Správa objednávek</h2>
+                
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button 
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                    title={soundEnabled ? "Vypnout zvukové upozornění" : "Zapnout zvukové upozornění"}
+                  >
+                    {soundEnabled ? "🔊 Zvuk zapnut" : "🔇 Zvuk vypnut"}
+                  </button>
+                  
+                  <button 
+                    className="btn btn-outline btn-sm" 
+                    style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
+                    onClick={clearAllOrders}
+                  >
+                    🗑️ Smazat historii
+                  </button>
+                </div>
+              </div>
+
+              {/* Order Stats Overview */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px', marginBottom: '25px' }}>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '15px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '5px' }}>Celkem</div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>{orders.length}</div>
+                </div>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '15px', textAlign: 'center', borderLeft: '4px solid var(--color-accent)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '5px' }}>Nové (Čekající)</div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-accent)' }}>
+                    {orders.filter(o => o.status === 'pending').length}
+                  </div>
+                </div>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '15px', textAlign: 'center', borderLeft: '4px solid var(--color-gold)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '5px' }}>V přípravě</div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-gold)' }}>
+                    {orders.filter(o => o.status === 'preparing').length}
+                  </div>
+                </div>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '15px', textAlign: 'center', borderLeft: '4px solid #2ec4b6' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '5px' }}>Dokončené</div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: '#2ec4b6' }}>
+                    {orders.filter(o => o.status === 'completed').length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Filters Tab Row */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '25px', overflowX: 'auto', paddingBottom: '5px' }}>
+                {(['all', 'pending', 'preparing', 'completed', 'cancelled'] as const).map((filter) => {
+                  const labelMap = {
+                    all: 'Všechny',
+                    pending: 'Nové 🛎️',
+                    preparing: 'V přípravě 🍳',
+                    completed: 'Dokončené ✅',
+                    cancelled: 'Zrušené ❌'
+                  };
+                  return (
+                    <button
+                      key={filter}
+                      className={`category-tab ${ordersFilter === filter ? 'active' : ''}`}
+                      style={{ padding: '6px 14px', fontSize: '13px', whiteSpace: 'nowrap' }}
+                      onClick={() => setOrdersFilter(filter)}
+                    >
+                      {labelMap[filter]} ({filter === 'all' ? orders.length : orders.filter(o => o.status === filter).length})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Orders Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                {orders.filter(o => ordersFilter === 'all' || o.status === ordersFilter).length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '50px 20px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                    📭 Žádné objednávky v této sekci.
+                  </div>
+                ) : (
+                  orders.filter(o => ordersFilter === 'all' || o.status === ordersFilter).map((order) => {
+                    const statusBadgeColors = {
+                      pending: { bg: 'rgba(231, 111, 81, 0.15)', text: 'var(--color-accent)', label: 'Nová' },
+                      preparing: { bg: 'rgba(212, 163, 115, 0.15)', text: 'var(--color-gold)', label: 'V přípravě' },
+                      completed: { bg: 'rgba(46, 196, 182, 0.15)', text: '#2ec4b6', label: 'Dokončeno' },
+                      cancelled: { bg: 'rgba(255,255,255,0.05)', text: 'var(--text-muted)', label: 'Zrušeno' }
+                    }[order.status] || { bg: 'rgba(255,255,255,0.05)', text: 'var(--text-muted)', label: order.status };
+
+                    const formattedTime = new Date(order.createdAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+                    const formattedDate = new Date(order.createdAt).toLocaleDateString('cs-CZ');
+
+                    return (
+                      <div 
+                        key={order.id} 
+                        style={{ 
+                          backgroundColor: 'var(--bg-secondary)', 
+                          border: '1px solid var(--border-color)', 
+                          borderRadius: 'var(--radius-md)', 
+                          padding: '20px', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          justifyContent: 'space-between',
+                          boxShadow: 'var(--shadow-sm)',
+                          borderTop: `4px solid ${statusBadgeColors.text}`
+                        }}
+                      >
+                        <div>
+                          {/* Card Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                            <div>
+                              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--color-gold)', lineHeight: 1.1 }}>
+                                #{order.customerNumber}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                ID: {order.id}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ 
+                                display: 'inline-block', 
+                                backgroundColor: statusBadgeColors.bg, 
+                                color: statusBadgeColors.text, 
+                                padding: '4px 10px', 
+                                borderRadius: 'var(--radius-full)', 
+                                fontSize: '11px', 
+                                fontWeight: 700 
+                              }}>
+                                {statusBadgeColors.label}
+                              </span>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                {formattedTime} ({formattedDate})
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Table or Name Info */}
+                          <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '10px 15px', borderRadius: 'var(--radius-sm)', marginBottom: '15px', fontSize: '13px', fontWeight: 600, borderLeft: '3px solid var(--color-gold)' }}>
+                            📍 {order.tableOrName}
+                          </div>
+
+                          {/* Order Items */}
+                          <div style={{ marginBottom: '20px' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+                              Objednané položky
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {order.items.map((item, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                  <span>
+                                    <strong style={{ color: 'var(--color-gold)' }}>{item.quantity}x</strong> {item.name}
+                                  </span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>
+                                    {formatPrice(item.price * item.quantity)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          {/* Total and Payment */}
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              Platba: {order.paymentMethod === 'cash' ? (
+                                <span>💵 Hotovost</span>
+                              ) : order.paymentMethod === 'applepay' ? (
+                                <span style={{ 
+                                  color: order.paymentStatus === 'paid' ? '#2ec4b6' : order.paymentStatus === 'failed' ? '#e76f51' : '#f4a261',
+                                  fontWeight: 600
+                                }}>
+                                  🍎 Apple Pay ({order.paymentStatus === 'paid' ? 'Zaplaceno ✅' : order.paymentStatus === 'failed' ? 'Chyba platby ❌' : 'Nezaplaceno ⏳'})
+                                </span>
+                              ) : (
+                                <span style={{ 
+                                  color: order.paymentStatus === 'paid' ? '#2ec4b6' : order.paymentStatus === 'failed' ? '#e76f51' : '#f4a261',
+                                  fontWeight: 600
+                                }}>
+                                  💳 Karta ({order.paymentStatus === 'paid' ? 'Zaplaceno ✅' : order.paymentStatus === 'failed' ? 'Chyba platby ❌' : 'Nezaplaceno ⏳'})
+                                </span>
+                              )}
+                            </span>
+                            <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {formatPrice(order.totalPrice)}
+                            </span>
+                          </div>
+
+                          {/* Actions */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {order.status === 'pending' && (
+                                <button 
+                                  className="btn btn-primary" 
+                                  style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
+                                  onClick={() => updateOrderStatus(order.id, 'preparing')}
+                                >
+                                  🍳 Vařit / Připravit
+                                </button>
+                              )}
+                              {order.status === 'preparing' && (
+                                <button 
+                                  className="btn btn-primary" 
+                                  style={{ flex: 1, padding: '8px 12px', fontSize: '13px', backgroundColor: '#2ec4b6', borderColor: '#2ec4b6' }}
+                                  onClick={() => updateOrderStatus(order.id, 'completed')}
+                                >
+                                  ✅ Dokončit
+                                </button>
+                              )}
+                              {order.status !== 'completed' && order.status !== 'cancelled' && (
+                                <button 
+                                  className="btn btn-outline btn-sm" 
+                                  style={{ padding: '8px 12px', fontSize: '13px', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
+                                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                                >
+                                  Zrušit
+                                </button>
+                              )}
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                              <select 
+                                className="form-select"
+                                style={{ flex: 2, padding: '6px', fontSize: '11px', height: 'auto', minHeight: '30px' }}
+                                value={order.status}
+                                onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                              >
+                                <option value="pending">Nová (Čekající)</option>
+                                <option value="preparing">V přípravě</option>
+                                <option value="completed">Dokončená</option>
+                                <option value="cancelled">Zrušená</option>
+                              </select>
+                              
+                              <button
+                                className="btn btn-outline"
+                                style={{ flex: 1, padding: '6px', fontSize: '11px', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)', minHeight: '30px' }}
+                                onClick={() => deleteOrder(order.id)}
+                              >
+                                Smazat
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: PRODUCTS MANAGER */}
           {activeTab === 'products' && (
             <div>

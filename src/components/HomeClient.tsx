@@ -24,6 +24,12 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
   // Modal state for viewing single item details
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
+  // Order submission states
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit' | 'applepay'>('cash');
+  const [tableOrName, setTableOrName] = useState('');
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState<any | null>(null);
+
   // Store open status (calculated client-side to keep timezone accurate)
   const [isOpen, setIsOpen] = useState(false);
 
@@ -34,6 +40,29 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
     }, 60000); // refresh every minute
     return () => clearInterval(interval);
   }, [settings]);
+
+  // Listen for payment callback redirect params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const orderId = urlParams.get('id');
+
+    if (payment === 'success' && orderId) {
+      fetch(`/api/orders?id=${orderId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            setPlacedOrder(data);
+            // Clean url params from history
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        })
+        .catch(err => console.error('Error fetching placed order details:', err));
+    } else if (payment === 'failed') {
+      alert('Platba kartou se nezdařila. Zkuste to prosím znovu nebo zvolte platbu v hotovosti.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   // Sync category active tab based on window scroll
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -102,6 +131,49 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
 
   const removeFromCart = (itemId: string) => {
     setCart(prev => prev.filter(i => i.item.id !== itemId));
+  };
+
+  const handleSubmitOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cart.length === 0) return;
+    
+    setIsSubmittingOrder(true);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart.map(i => ({
+            id: i.item.id,
+            name: i.item.name,
+            price: i.item.price,
+            quantity: i.quantity
+          })),
+          paymentMethod,
+          tableOrName,
+          ref: 'home'
+        })
+      });
+      
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.paymentUrl) {
+          // Redirect customer to SumUp secure payment page
+          window.location.href = data.paymentUrl;
+        } else {
+          setPlacedOrder(data.order);
+          setCart([]); // Clear cart
+          setIsCartOpen(false); // Close cart drawer
+        }
+      } else {
+        alert(data.error || 'Nastala chyba při odesílání objednávky.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Chyba komunikace se serverem.');
+    } finally {
+      setIsSubmittingOrder(false);
+    }
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.item.price * item.quantity), 0);
@@ -369,23 +441,76 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
         </div>
 
         {cart.length > 0 && (
-          <div className="cart-footer">
-            <div className="cart-summary-row">
+          <div className="cart-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+            <div className="cart-summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span>Položky</span>
               <span>{cartItemCount}x</span>
             </div>
-            <div className="cart-summary-total">
+            <div className="cart-summary-total" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>
               <span>Celkem k placení</span>
               <span>{formatPrice(cartTotal)}</span>
             </div>
             
-            <button className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '15px' }} onClick={() => setIsCartOpen(false)}>
-              Zavřít a ukázat u pokladny
-            </button>
+            <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div>
+                <label className="form-label" style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Metoda platby *
+                </label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    className={`btn ${paymentMethod === 'cash' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    onClick={() => setPaymentMethod('cash')}
+                  >
+                    💵 Hotovost
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${paymentMethod === 'credit' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    onClick={() => setPaymentMethod('credit')}
+                  >
+                    💳 Karta
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${paymentMethod === 'applepay' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    onClick={() => setPaymentMethod('applepay')}
+                  >
+                    🍎 Apple Pay
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="form-label" htmlFor="table-or-name-input" style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Číslo stolu / Jméno
+                </label>
+                <input
+                  id="table-or-name-input"
+                  type="text"
+                  className="form-input"
+                  style={{ width: '100%', padding: '10px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color-light)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }}
+                  placeholder="Např. Stůl 5, Yaman..."
+                  value={tableOrName}
+                  onChange={(e) => setTableOrName(e.target.value)}
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                style={{ width: '100%', padding: '12px', fontSize: '15px', fontWeight: 700 }}
+                disabled={isSubmittingOrder}
+              >
+                {isSubmittingOrder ? 'Odesílání...' : 'Odeslat objednávku 🛎️'}
+              </button>
+            </form>
             
-            <p className="cart-instruction">
-              📢 <strong>Objednávejte prosím u pultu.</strong><br />
-              Ukažte tento displej obsluze při placení pro rychlé vyřízení objednávky.
+            <p className="cart-instruction" style={{ marginTop: '15px', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.4' }}>
+              📢 Vaše objednávka se odešle přímo do kuchyně. Zaplatíte na místě zvolenou metodou.
             </p>
           </div>
         )}
@@ -524,6 +649,54 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           </div>
         </div>
       </footer>
+
+      {/* Placed Order Confirmation Modal */}
+      {placedOrder && (
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ maxWidth: '450px', width: '90%', textAlign: 'center', padding: '30px' }}>
+            <div style={{ fontSize: '50px', marginBottom: '15px' }}>🎉</div>
+            <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-gold)', marginBottom: '10px' }}>
+              Objednávka odeslána!
+            </h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              Děkujeme! Vaše objednávka byla odeslána a začínáme ji připravovat.
+            </p>
+            
+            <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Číslo pro Vás:</span>
+                <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>#{placedOrder.customerNumber}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Kód prodejce:</span>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>{placedOrder.id}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Platební metoda:</span>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>
+                  {placedOrder.paymentMethod === 'cash' 
+                    ? '💵 Hotovost' 
+                    : placedOrder.paymentMethod === 'applepay' 
+                    ? '🍎 Apple Pay' 
+                    : '💳 Karta'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Celkem k úhradě:</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-gold)' }}>{formatPrice(placedOrder.totalPrice)}</span>
+              </div>
+            </div>
+            
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '25px', lineHeight: 1.5 }}>
+              📢 Zapamatujte si číslo objednávky <strong>(#{placedOrder.customerNumber})</strong>. Obsluha jej použije pro doručení nebo k vyzvání u pokladny.
+            </p>
+            
+            <button className="btn btn-primary" style={{ width: '100%', padding: '12px' }} onClick={() => setPlacedOrder(null)}>
+              Rozumím
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
