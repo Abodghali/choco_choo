@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -42,7 +43,7 @@ const MENU_FILE_PATH = path.join(process.cwd(), 'src/data/menu.json');
 const SETTINGS_FILE_PATH = path.join(process.cwd(), 'src/data/settings.json');
 
 // Helper to get Supabase client dynamically if configured
-let supabaseClient: any = null;
+let supabaseClient: import('@supabase/supabase-js').SupabaseClient | null = null;
 
 async function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
@@ -57,8 +58,7 @@ async function getSupabaseClient() {
       supabaseClient = createClient(supabaseUrl, supabaseKey);
       return supabaseClient;
     } catch (e) {
-      console.error("Failed to load Supabase SDK, falling back to JSON storage:", e);
-      return null;
+      throw new Error("Unable to initialize configured storage", { cause: e });
     }
   }
   return null;
@@ -263,9 +263,9 @@ export async function getOrders(): Promise<Order[]> {
         await saveOrders(localOrders);
         return localOrders;
       }
-      console.warn("Supabase select orders error, using local fallback:", error);
+      throw new Error("Unable to read remote orders", { cause: error });
     } catch (e) {
-      console.error("Supabase orders connection failed, using local fallback:", e);
+      throw new Error("Unable to read remote orders", { cause: e });
     }
   }
   return getLocalOrders();
@@ -280,9 +280,9 @@ export async function saveOrders(orders: Order[]): Promise<boolean> {
         .upsert({ key: 'orders', value: orders });
       
       if (!error) return true;
-      console.error("Failed to save orders to Supabase:", error);
+      return false;
     } catch (e) {
-      console.error("Supabase orders upsert failed:", e);
+      return false;
     }
   }
   return saveLocalOrders(orders);
@@ -295,7 +295,7 @@ async function getLocalOrders(): Promise<Order[]> {
       return JSON.parse(content);
     }
   } catch (e) {
-    console.error("Error reading local orders file:", e);
+    throw new Error("Unable to read orders", { cause: e });
   }
   return [];
 }
@@ -303,7 +303,9 @@ async function getLocalOrders(): Promise<Order[]> {
 async function saveLocalOrders(orders: Order[]): Promise<boolean> {
   try {
     fs.mkdirSync(path.dirname(ORDERS_FILE_PATH), { recursive: true });
-    fs.writeFileSync(ORDERS_FILE_PATH, JSON.stringify(orders, null, 2), 'utf8');
+    const temp = `${ORDERS_FILE_PATH}.${randomUUID()}.tmp`;
+    fs.writeFileSync(temp, JSON.stringify(orders, null, 2), { encoding: 'utf8', mode: 0o600 });
+    fs.renameSync(temp, ORDERS_FILE_PATH);
     return true;
   } catch (e) {
     console.error("Error writing local orders file:", e);
@@ -335,7 +337,7 @@ export async function createNewOrder(orderData: Omit<Order, 'id' | 'customerNumb
   // Format seller order ID: ORD-YYYYMMDD-XXXX where XXXX is padded customer number
   const yyyymmdd = pragueDateStr.replace(/-/g, '');
   const paddedSeq = String(nextCustomerNumber).padStart(4, '0');
-  const nextOrderId = `ORD-${yyyymmdd}-${paddedSeq}`;
+  const nextOrderId = `ORD-${yyyymmdd}-${paddedSeq}-${randomUUID()}`;
   
   const newOrder: Order = {
     ...orderData,
@@ -347,6 +349,23 @@ export async function createNewOrder(orderData: Omit<Order, 'id' | 'customerNumb
   };
   
   orders.push(newOrder);
-  await saveOrders(orders);
+  if (!await saveOrders(orders)) throw new Error('Failed to persist order');
   return newOrder;
+}
+
+// Filesystem lock serializes read/modify/write across local Next.js workers.
+// Remote multi-instance hosting requires transactional order rows instead.
+export async function withOrderLock<T>(work: () => Promise<T>): Promise<T> {
+  const lockPath = ORDERS_FILE_PATH + '.lock';
+  const deadline = Date.now() + 10000;
+  let handle;
+  while (!handle) {
+    try { handle = await fs.promises.open(lockPath, 'wx'); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST' || Date.now() > deadline) throw error;
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+  }
+  try { return await work(); }
+  finally { await handle.close(); await fs.promises.unlink(lockPath); }
 }

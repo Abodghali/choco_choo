@@ -1,72 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signToken, getAuthUser } from '@/lib/auth';
-
-// SHA-256 helper for password hashing
-async function sha256(text: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// POST: Login
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { signToken, getAuthUser, authConfigured } from '@/lib/auth';
+import { mutationGuard, readJson, limited } from '@/lib/security';
 export async function POST(req: NextRequest) {
+  const blocked = mutationGuard(req);
+  if (blocked) return blocked;
+  if (!authConfigured()) return NextResponse.json({ error: 'Configure ADMIN_PASSWORD (12+ characters) and JWT_SECRET (32+ random characters).' }, { status: 503 });
+  if (limited('login', 10, 60000)) return NextResponse.json({ error: 'Try again later' }, { status: 429 });
   try {
-    const { username, password } = await req.json();
-
-    let isValid = false;
-
-    if (username === 'admin') {
-      const adminPassword = process.env.ADMIN_PASSWORD || 'change-this-password';
-      isValid = password === adminPassword;
-    } else if (username === 'yaman') {
-      const targetHash = 'a968f88813904746746dae3a20a96c347b4da683b7bb71eb29eed9bcb799e407';
-      const inputHash = await sha256(password);
-      isValid = inputHash === targetHash;
-    }
-
-    if (isValid) {
-      const token = await signToken({ username });
-      
-      const response = NextResponse.json({ success: true, message: 'Logged in successfully' });
-      
-      // Set token as secure, HTTP-only cookie
-      response.cookies.set('admin_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24, // 1 day in seconds
-        path: '/'
-      });
-
-      return response;
-    }
-
-    return NextResponse.json({ success: false, message: 'Nesprávné uživatelské jméno nebo heslo' }, { status: 401 });
-  } catch (e) {
-    return NextResponse.json({ success: false, message: 'Server error during login' }, { status: 500 });
-  }
+    const { username, password } = await readJson(req, 4096);
+    if (typeof password !== 'string' || password.length > 1024) return NextResponse.json({ error: 'Invalid credentials' }, { status: 400 });
+    const hash = (s: string) => createHash('sha256').update(s).digest();
+    if (username !== 'yaman' || !timingSafeEqual(hash(password), hash(process.env.ADMIN_PASSWORD!))) return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('admin_token', await signToken({ username: 'yaman' }), { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 28800, path: '/' });
+    return response;
+  } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }); }
 }
-
-// GET: Check Auth Status
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req);
-  if (user) {
-    return NextResponse.json({ authenticated: true, username: user.username });
-  }
-  return NextResponse.json({ authenticated: false }, { status: 401 });
+  return NextResponse.json(user ? { authenticated: true, username: user.username } : { authenticated: false }, { status: user ? 200 : 401 });
 }
-
-// DELETE: Logout
-export async function DELETE() {
-  const response = NextResponse.json({ success: true, message: 'Logged out successfully' });
-  
-  // Clear cookie
-  response.cookies.set('admin_token', '', {
-    httpOnly: true,
-    expires: new Date(0),
-    path: '/'
-  });
-
+export async function DELETE(req: NextRequest) {
+  const blocked = mutationGuard(req);
+  if (blocked) return blocked;
+  const response = NextResponse.json({ success: true });
+  response.cookies.set('admin_token', '', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', expires: new Date(0), path: '/' });
   return response;
 }

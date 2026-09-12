@@ -31,30 +31,37 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
     items: cat.items.filter(item => item.available)
   })).filter(cat => cat.items.length > 0);
 
-  // Listen for payment callback redirect params
+  // Display success only after an authenticated server status check.
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const payment = urlParams.get('payment');
-    const orderId = urlParams.get('id');
-
-    if (payment === 'success' && orderId) {
-      fetch(`/api/orders?id=${orderId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && !data.error) {
-            setPlacedOrder(data);
-            // Clean url params from history
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-        })
-        .catch(err => console.error('Error fetching placed order details:', err));
-    } else if (payment === 'failed') {
-      alert('Platba kartou se nezdařila. Zkuste to prosím znovu nebo zvolte platbu v hotovosti.');
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id || !params.has('payment')) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let attempts = 0;
+    const check = async () => {
+      try {
+        const response = await fetch('/api/orders?id=' + encodeURIComponent(id));
+        if (!response.ok) throw new Error('Verification unavailable');
+        const order = await response.json();
+        if (cancelled) return;
+        if (order.paymentStatus === 'paid') {
+          setPlacedOrder(order);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+        if (order.paymentStatus === 'failed') {
+          alert('Platba se nezdařila. Obraťte se na obsluhu.');
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+      } catch { if (cancelled) return; }
+      if (++attempts < 20) timer = setTimeout(check, 3000);
+      else alert('Platba zatím není potvrzena. Nevytvářejte další objednávku; obraťte se na obsluhu.');
+    };
+    void check();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, []); useEffect(() => {
     if (activeMenu.length > 0 && !activeCategory) {
       setActiveCategory(activeMenu[0].category);
     }

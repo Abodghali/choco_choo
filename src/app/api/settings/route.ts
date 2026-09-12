@@ -1,3 +1,5 @@
+import { mutationGuard, readJson } from '@/lib/security';
+import { validSettings } from '@/lib/validation';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSettings, saveSettings } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
@@ -14,6 +16,8 @@ export async function GET() {
 
 // POST: Save/Update settings data (Protected)
 export async function POST(req: NextRequest) {
+  const blocked = mutationGuard(req);
+  if (blocked) return blocked;
   try {
     // Check authentication
     const user = await getAuthUser(req);
@@ -21,8 +25,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const newSettings = await req.json();
-    if (!newSettings || typeof newSettings !== 'object') {
+    const newSettings = await readJson(req, 1048576);
+    if (!validSettings(newSettings)) {
       return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 });
     }
 

@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+!.env.example
+src/data/*.lock
+src/data/*.tmp
+
+src/data/orders.json

@@ -38,7 +38,7 @@ Copy the template variables file:
 cp .env.example .env
 ```
 Open `.env` and set:
-* `ADMIN_PASSWORD` (Your desired admin panel password. Defaults to `change-this-password` if left empty).
+* `ADMIN_PASSWORD` (Required unique admin password, at least 12 characters; there is no default login).
 * `JWT_SECRET` (A unique random string for signing secure admin sessions).
 
 ### 3. Run Locally
@@ -111,3 +111,7 @@ Once the website is live (e.g., `https://chocochoo.cz`):
 2. Use any QR Code generator (such as [qr-code-generator.com](https://www.qr-code-generator.com/) or direct Chrome "Create QR Code" tool).
 3. Generate the QR code pointing directly to `https://chocochoo.cz/menu-qr`.
 4. Print the QR code and attach it to tables. When scanned, customers will land directly on the mobile-first menu.
+
+## Payment security and local testing
+
+See [SUMUP_GUIDE_AR.md](SUMUP_GUIDE_AR.md) for local admin credentials, SumUp sandbox setup, and deployment requirements. Card payment is disabled without credentials; the legacy mock payment endpoint is permanently disabled. Run `npm run test:security` and `npm run typecheck` to verify the security changes.

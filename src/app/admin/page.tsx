@@ -668,7 +668,7 @@ export default function AdminPage() {
           <h1 style={{ fontSize: '18px', fontWeight: 800 }}>Choco Choo Panel</h1>
         </div>
         <div className="admin-user">
-          <span>Uživatel: <strong>admin</strong></span>
+          <span>Uživatel: <strong>yaman</strong></span>
           <button onClick={handleLogout} className="btn btn-secondary btn-sm">Odhlásit</button>
           <a href="/" target="_blank" className="btn btn-outline btn-sm">Zobrazit web</a>
         </div>

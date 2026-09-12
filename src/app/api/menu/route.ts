@@ -1,3 +1,5 @@
+import { mutationGuard, readJson } from '@/lib/security';
+import { validMenu } from '@/lib/validation';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMenu, saveMenu } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
@@ -14,6 +16,8 @@ export async function GET() {
 
 // POST: Save/Update menu data (Protected)
 export async function POST(req: NextRequest) {
+  const blocked = mutationGuard(req);
+  if (blocked) return blocked;
   try {
     // Check authentication
     const user = await getAuthUser(req);
@@ -21,8 +25,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const newMenu = await req.json();
-    if (!Array.isArray(newMenu)) {
+    const newMenu = await readJson(req, 1048576);
+    if (!validMenu(newMenu)) {
       return NextResponse.json({ error: 'Invalid menu format' }, { status: 400 });
     }
 
