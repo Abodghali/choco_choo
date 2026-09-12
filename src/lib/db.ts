@@ -49,13 +49,15 @@ async function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
   
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!!supabaseUrl !== !!supabaseKey) throw new Error('Configure both Supabase URL and server key');
+  if (process.env.VERCEL && !supabaseUrl) throw new Error('Supabase is required on Vercel');
 
   if (supabaseUrl && supabaseKey) {
     try {
       // Dynamically import @supabase/supabase-js to avoid crash if not installed
       const { createClient } = await import('@supabase/supabase-js');
-      supabaseClient = createClient(supabaseUrl, supabaseKey);
+      supabaseClient = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
       return supabaseClient;
     } catch (e) {
       throw new Error("Unable to initialize configured storage", { cause: e });
@@ -69,93 +71,45 @@ async function getSupabaseClient() {
 // -------------------------------------------------------------
 
 export async function getMenu(): Promise<MenuCategory[]> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('choco_store')
-        .select('value')
-        .eq('key', 'menu')
-        .single();
-      
-      if (data && data.value) {
-        return data.value as MenuCategory[];
-      }
-      
-      // If table exists but row doesn't, seed it from local file
-      if (error && error.code === 'PGRST116') {
-        const localMenu = await getLocalMenu();
-        await saveMenu(localMenu);
-        return localMenu;
-      }
-      console.warn("Supabase select error, using local fallback:", error);
-    } catch (e) {
-      console.error("Supabase connection failed, using local fallback:", e);
-    }
-  }
-  return getLocalMenu();
+  const client = await getSupabaseClient();
+  if (!client) return getLocalMenu();
+  const { data, error } = await client.from('choco_store').select('value').eq('key','menu').maybeSingle();
+  if (error) throw new Error('Unable to load menu', { cause: error });
+  if (data) return data.value as MenuCategory[];
+  const initial = await getLocalMenu();
+  const seeded = await client.from('choco_store').upsert({ key:'menu', value:initial }, { onConflict:'key', ignoreDuplicates:true });
+  if (seeded.error) throw new Error('Unable to initialize menu', { cause: seeded.error });
+  const saved = await client.from('choco_store').select('value').eq('key','menu').single();
+  if (saved.error) throw new Error('Unable to load menu', { cause: saved.error });
+  return saved.data.value as MenuCategory[];
 }
-
-export async function saveMenu(menu: MenuCategory[]): Promise<boolean> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    try {
-      const { error } = await supabase
-        .from('choco_store')
-        .upsert({ key: 'menu', value: menu });
-      
-      if (!error) return true;
-      console.error("Failed to save menu to Supabase:", error);
-    } catch (e) {
-      console.error("Supabase upsert failed:", e);
-    }
-  }
-  return saveLocalMenu(menu);
+export async function saveMenu(value: MenuCategory[]): Promise<boolean> {
+  const client = await getSupabaseClient();
+  if (!client) return saveLocalMenu(value);
+  const { error } = await client.from('choco_store').upsert({ key:'menu', value });
+  if (error) throw new Error('Unable to save menu', { cause: error });
+  return true;
 }
 
 export async function getSettings(): Promise<StoreSettings> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('choco_store')
-        .select('value')
-        .eq('key', 'settings')
-        .single();
-      
-      if (data && data.value) {
-        return data.value as StoreSettings;
-      }
-      
-      // Seed if empty in database
-      if (error && error.code === 'PGRST116') {
-        const localSettings = await getLocalSettings();
-        await saveSettings(localSettings);
-        return localSettings;
-      }
-      console.warn("Supabase settings error, using local fallback:", error);
-    } catch (e) {
-      console.error("Supabase settings connection failed:", e);
-    }
-  }
-  return getLocalSettings();
+  const client = await getSupabaseClient();
+  if (!client) return getLocalSettings();
+  const { data, error } = await client.from('choco_store').select('value').eq('key','settings').maybeSingle();
+  if (error) throw new Error('Unable to load settings', { cause: error });
+  if (data) return data.value as StoreSettings;
+  const initial = await getLocalSettings();
+  const seeded = await client.from('choco_store').upsert({ key:'settings', value:initial }, { onConflict:'key', ignoreDuplicates:true });
+  if (seeded.error) throw new Error('Unable to initialize settings', { cause: seeded.error });
+  const saved = await client.from('choco_store').select('value').eq('key','settings').single();
+  if (saved.error) throw new Error('Unable to load settings', { cause: saved.error });
+  return saved.data.value as StoreSettings;
 }
-
-export async function saveSettings(settings: StoreSettings): Promise<boolean> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    try {
-      const { error } = await supabase
-        .from('choco_store')
-        .upsert({ key: 'settings', value: settings });
-      
-      if (!error) return true;
-      console.error("Failed to save settings to Supabase:", error);
-    } catch (e) {
-      console.error("Supabase settings upsert failed:", e);
-    }
-  }
-  return saveLocalSettings(settings);
+export async function saveSettings(value: StoreSettings): Promise<boolean> {
+  const client = await getSupabaseClient();
+  if (!client) return saveLocalSettings(value);
+  const { error } = await client.from('choco_store').upsert({ key:'settings', value });
+  if (error) throw new Error('Unable to save settings', { cause: error });
+  return true;
 }
 
 // -------------------------------------------------------------
@@ -245,47 +199,59 @@ export interface Order {
 const ORDERS_FILE_PATH = path.join(process.cwd(), 'src/data/orders.json');
 
 export async function getOrders(): Promise<Order[]> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('choco_store')
-        .select('value')
-        .eq('key', 'orders')
-        .single();
-      
-      if (data && data.value) {
-        return data.value as Order[];
-      }
-      
-      if (error && error.code === 'PGRST116') {
-        const localOrders = await getLocalOrders();
-        await saveOrders(localOrders);
-        return localOrders;
-      }
-      throw new Error("Unable to read remote orders", { cause: error });
-    } catch (e) {
-      throw new Error("Unable to read remote orders", { cause: e });
-    }
+  const client = await getSupabaseClient();
+  if (!client) return getLocalOrders();
+  const result: Order[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await client.from('choco_orders').select('value').order('id').range(offset,offset+499);
+    if (error) throw new Error('Unable to load orders', { cause:error });
+    result.push(...data.map(row => row.value as Order));
+    if (data.length < 500) return result;
   }
-  return getLocalOrders();
 }
-
+export async function getOrder(id: string): Promise<Order | undefined> {
+  const client = await getSupabaseClient();
+  if (!client) return (await getLocalOrders()).find(o => o.id === id);
+  const { data, error } = await client.from('choco_orders').select('value').eq('id',id).maybeSingle();
+  if (error) throw new Error('Unable to load order', { cause:error });
+  return data?.value as Order | undefined;
+}
 export async function saveOrders(orders: Order[]): Promise<boolean> {
-  const supabase = await getSupabaseClient();
-  if (supabase) {
-    try {
-      const { error } = await supabase
-        .from('choco_store')
-        .upsert({ key: 'orders', value: orders });
-      
-      if (!error) return true;
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
+  if (await getSupabaseClient()) throw new Error('Bulk replacement of remote orders is disabled');
   return saveLocalOrders(orders);
+}
+export async function updateOrder(id: string, patch: Partial<Pick<Order,'status'|'paymentStatus'|'sumupCheckoutId'>>): Promise<Order | undefined> {
+  const client = await getSupabaseClient();
+  if (client) {
+    const { data,error } = await client.rpc('choco_update_order',{ p_id:id, p_patch:patch });
+    if (error) throw new Error('Unable to update order', { cause:error });
+    return data || undefined;
+  }
+  return withOrderLock(async () => {
+    const orders = await getLocalOrders(); const order = orders.find(o => o.id === id);
+    if (!order) return undefined;
+    const updates = { ...patch };
+    if (order.paymentStatus === 'paid') delete updates.paymentStatus;
+    if (order.sumupCheckoutId && updates.sumupCheckoutId && order.sumupCheckoutId !== updates.sumupCheckoutId) throw new Error('Checkout already attached');
+    const merged = { ...order, ...updates };
+    if (merged.paymentMethod !== 'cash' && merged.paymentStatus !== 'paid' && ['preparing','completed'].includes(merged.status)) throw new Error('Payment not verified');
+    Object.assign(order, merged);
+    if (!await saveLocalOrders(orders)) throw new Error('Save failed');
+    return order;
+  });
+}
+export async function deleteOrders(id?: string): Promise<void> {
+  const client = await getSupabaseClient();
+  if (client) {
+    const query = client.from('choco_orders').delete();
+    const { error } = await (id ? query.eq('id',id) : query.not('id','is',null));
+    if (error) throw new Error('Unable to delete orders', { cause:error });
+    return;
+  }
+  await withOrderLock(async () => {
+    const orders = await getLocalOrders();
+    if (!await saveLocalOrders(id ? orders.filter(o => o.id !== id) : [])) throw new Error('Delete failed');
+  });
 }
 
 async function getLocalOrders(): Promise<Order[]> {
@@ -314,6 +280,12 @@ async function saveLocalOrders(orders: Order[]): Promise<boolean> {
 }
 
 export async function createNewOrder(orderData: Omit<Order, 'id' | 'customerNumber' | 'createdAt' | 'status'>): Promise<Order> {
+  const client = await getSupabaseClient();
+  if (client) {
+    const { data, error } = await client.rpc('choco_create_order', { p_order: orderData });
+    if (error) throw new Error('Unable to create order', { cause: error });
+    return data as Order;
+  }
   const orders = await getOrders();
   
   // Get current date in Europe/Prague timezone for resetting customer number daily
@@ -356,6 +328,8 @@ export async function createNewOrder(orderData: Omit<Order, 'id' | 'customerNumb
 // Filesystem lock serializes read/modify/write across local Next.js workers.
 // Remote multi-instance hosting requires transactional order rows instead.
 export async function withOrderLock<T>(work: () => Promise<T>): Promise<T> {
+  if (await getSupabaseClient()) return work(); // Remote mutations are atomic SQL operations.
+  await fs.promises.mkdir(path.dirname(ORDERS_FILE_PATH), { recursive: true });
   const lockPath = ORDERS_FILE_PATH + '.lock';
   const deadline = Date.now() + 10000;
   let handle;

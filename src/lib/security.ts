@@ -14,7 +14,10 @@ export function limited(key: string, max: number, windowMs = 60000) {
   return bucket.count > max;
 }
 export function mutationGuard(req: NextRequest) {
-  if (req.headers.get('origin') !== siteOrigin()) return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+  let origin: string;
+  try { origin = siteOrigin(); }
+  catch { return NextResponse.json({ error: 'Site URL is not configured correctly', code: 'SITE_URL_CONFIGURATION' }, { status: 503 }); }
+  if (req.headers.get('origin') !== origin) return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
   if (req.method !== 'DELETE' && !req.headers.get('content-type')?.startsWith('application/json')) return NextResponse.json({ error: 'JSON required' }, { status: 415 });
   return null;
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrders } from '@/lib/db';
+import { getOrder } from '@/lib/db';
 import { refreshPayment } from '@/lib/payment';
 import { siteOrigin } from '@/lib/security';
 export async function GET(req: NextRequest) {
@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id');
   if (!id || req.cookies.get('order_access')?.value !== id || id.length < 40) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const order = (await getOrders()).find(o => o.id === id);
+    const order = await getOrder(id);
     if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const verified = await refreshPayment(order);
     const url = new URL(req.nextUrl.searchParams.get('ref') === 'qr' ? '/menu-qr' : '/', siteOrigin());

@@ -1,4 +1,4 @@
-import { getOrders, saveOrders, withOrderLock, type Order } from './db';
+import { updateOrder, type Order } from './db';
 const checked = new Map<string, number>();
 export async function refreshPayment(order: Order): Promise<Order> {
   if (!order.sumupCheckoutId || order.paymentStatus === 'paid' || !process.env.SUMUP_API_KEY) return order;
@@ -11,12 +11,6 @@ export async function refreshPayment(order: Order): Promise<Order> {
     const data = await response.json();
     if (data.id !== order.sumupCheckoutId || data.checkout_reference !== order.id || data.currency !== 'CZK' || data.merchant_code !== process.env.SUMUP_MERCHANT_CODE || typeof data.amount !== 'number' || Math.round(data.amount * 100) !== Math.round(order.totalPrice * 100)) return order;
     if (data.status !== 'PAID' && data.status !== 'FAILED') return order;
-    return await withOrderLock(async () => {
-      const orders = await getOrders(); const current = orders.find(o => o.id === order.id);
-      if (!current || current.paymentStatus === 'paid') return current || order;
-      current.paymentStatus = data.status === 'PAID' ? 'paid' : 'failed';
-      if (!await saveOrders(orders)) throw new Error('Save failed');
-      return current;
-    });
+    return await updateOrder(order.id, { paymentStatus: data.status === 'PAID' ? 'paid' : 'failed' }) || order;
   } catch { return order; }
 }

@@ -215,12 +215,22 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      const data = await res.json();
-      if (data.success) {
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
         setAuthenticated(true);
         fetchData();
+      } else if (data?.code === 'SITE_URL_CONFIGURATION') {
+        setLoginError('Nastavení APP_URL na serveru chybí nebo není platná HTTPS adresa.');
+      } else if (res.status === 403) {
+        setLoginError('Adresa tohoto webu neodpovídá APP_URL. Otevřete hlavní adresu webu.');
+      } else if (res.status === 503) {
+        setLoginError('Zkontrolujte nastavení ADMIN_PASSWORD a JWT_SECRET na serveru.');
+      } else if (res.status === 429) {
+        setLoginError('Příliš mnoho pokusů. Počkejte minutu a zkuste to znovu.');
+      } else if (res.status === 401) {
+        setLoginError('Nesprávné uživatelské jméno nebo heslo.');
       } else {
-        setLoginError(data.message || 'Nesprávné přihlašovací údaje');
+        setLoginError('Přihlášení selhalo (HTTP ' + res.status + '). Zkontrolujte logy nasazení.');
       }
     } catch (e) {
       setLoginError('Chyba při pokusu o přihlášení');

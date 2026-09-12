@@ -52,24 +52,11 @@ Open [http://localhost:3000/admin](http://localhost:3000/admin) to log in to the
 
 ---
 
-## 💾 Production Database Setup (Supabase)
+## Production Database Setup (Supabase)
 
-For serverless deployments (where local filesystem writes are temporary or read-only), configure a free Supabase instance:
+Run the complete [supabase/setup.sql](supabase/setup.sql) in Supabase SQL Editor, then configure SUPABASE_URL and SUPABASE_SECRET_KEY on the server. The legacy SUPABASE_SERVICE_ROLE_KEY remains supported. Supabase is required on Vercel. Orders use independent rows and atomic database functions; local file locks are only used for local JSON storage.
 
-1. Create a free account at [supabase.com](https://supabase.com).
-2. Create a new project.
-3. Open the **SQL Editor** in the Supabase dashboard and run the following command to create the store table:
-   ```sql
-   create table choco_store (
-     key text primary key,
-     value jsonb
-   );
-   ```
-4. Copy your project settings:
-   * Go to **Project Settings** > **API**.
-   * Copy the **Project URL** and paste it as `SUPABASE_URL` in your env.
-   * Copy the **service_role** API key (do NOT use the `anon` key, as the server needs write permissions) and paste it as `SUPABASE_SERVICE_ROLE_KEY` in your env.
-5. Save the environment variables. The application will automatically detect them, seed the database with the initial Czech menu, and persist all admin operations.
+Follow [SUPABASE_SETUP_AR.md](SUPABASE_SETUP_AR.md) for the full setup and verification steps. Run npm run test:supabase to test the SQL and remote storage adapter locally.
 
 ---
 
@@ -81,8 +68,9 @@ For serverless deployments (where local filesystem writes are temporary or read-
 3. Set your environment variables in the project settings panel:
    * `ADMIN_PASSWORD`
    * `JWT_SECRET`
-   * `SUPABASE_URL` (optional but recommended)
-   * `SUPABASE_SERVICE_ROLE_KEY` (optional but recommended)
+   * `APP_URL` (the canonical HTTPS site origin)
+   * `SUPABASE_URL` (required on Vercel)
+   * `SUPABASE_SECRET_KEY` (required on Vercel)
 4. Trigger the build and deploy.
 
 ### Deploying to Cloudflare Pages
