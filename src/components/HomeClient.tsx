@@ -1,5 +1,10 @@
 'use client';
+import { useCustomerLanguage, CustomerLanguageProvider, LanguageSwitch } from './CustomerLanguage';
 
+import CartOptions from './CartOptions';
+import OrderTracker, { rememberOrder } from './OrderTracker';
+import { WEEKDAYS, getAddOns, linePrice, type CartLine } from '@/lib/order-options';
+import type { Order } from '@/lib/db';
 import React, { useState, useEffect, useRef } from 'react';
 import { MenuCategory, StoreSettings, MenuItem } from '@/lib/db';
 import { isStoreCurrentlyOpen, formatPrice } from '@/lib/utils';
@@ -9,13 +14,16 @@ interface HomeClientProps {
   initialSettings: StoreSettings;
 }
 
-export default function HomeClient({ initialMenu, initialSettings }: HomeClientProps) {
+function HomeClientContent({ initialMenu, initialSettings }: HomeClientProps) {
   // Local state initialized with server-fetched SSR data
+  const { t, itemName, itemDescription } = useCustomerLanguage();
   const [menu] = useState<MenuCategory[]>(initialMenu);
   const [settings] = useState<StoreSettings>(initialSettings);
   
   // Cart state
-  const [cart, setCart] = useState<{ item: MenuItem; quantity: number }[]>([]);
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const addOns = getAddOns(menu);
+  const customizeItem = (id: string, changes: { addOnIds: string[]; note: string }) => setCart(prev => prev.map(line => line.item.id === id ? {...line,...changes} : line));
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   // Selected category tab state
@@ -28,7 +36,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit' | 'applepay'>('cash');
   const [tableOrName, setTableOrName] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
-  const [placedOrder, setPlacedOrder] = useState<any | null>(null);
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
   // Store open status (calculated client-side to keep timezone accurate)
   const [isOpen, setIsOpen] = useState(false);
@@ -61,13 +69,13 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           return;
         }
         if (order.paymentStatus === 'failed') {
-          alert('Platba se nezdařila. Obraťte se na obsluhu.');
+          alert(t("Platba se nezdařila. Obraťte se na obsluhu."));
           window.history.replaceState({}, document.title, window.location.pathname);
           return;
         }
       } catch { if (cancelled) return; }
       if (++attempts < 20) timer = setTimeout(check, 3000);
-      else alert('Platba zatím není potvrzena. Nevytvářejte další objednávku; obraťte se na obsluhu.');
+      else alert(t("Platba zatím není potvrzena. Nevytvářejte další objednávku; obraťte se na obsluhu."));
     };
     void check();
     return () => { cancelled = true; clearTimeout(timer); };
@@ -114,6 +122,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
 
   // Cart operations
   const addToCart = (item: MenuItem) => {
+    setIsCartOpen(true);
     setCart(prev => {
       const existing = prev.find(i => i.item.id === item.id);
       if (existing) {
@@ -132,7 +141,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           return newQty > 0 ? { ...i, quantity: newQty } : null;
         }
         return i;
-      }).filter(Boolean) as { item: MenuItem; quantity: number }[];
+      }).filter(Boolean) as CartLine[];
     });
   };
 
@@ -154,7 +163,9 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
             id: i.item.id,
             name: i.item.name,
             price: i.item.price,
-            quantity: i.quantity
+            quantity: i.quantity,
+            addOnIds: i.addOnIds || [],
+            note: i.note || ''
           })),
           paymentMethod,
           tableOrName,
@@ -164,6 +175,8 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
       
       const data = await res.json();
       if (res.ok && data.success) {
+        rememberOrder(data.order.id);
+        setPlacedOrder(data.order);
         if (data.paymentUrl) {
           // Redirect customer to SumUp secure payment page
           window.location.href = data.paymentUrl;
@@ -173,17 +186,17 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           setIsCartOpen(false); // Close cart drawer
         }
       } else {
-        alert(data.error || 'Nastala chyba při odesílání objednávky.');
+        alert(t("Nastala chyba při odesílání objednávky."));
       }
     } catch (err) {
       console.error(err);
-      alert('Chyba komunikace se serverem.');
+      alert(t('Chyba komunikace se serverem.'));
     } finally {
       setIsSubmittingOrder(false);
     }
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.item.price * item.quantity), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + (linePrice(item, addOns) * item.quantity), 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Filter out disabled items for display
@@ -208,7 +221,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
   });
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="customer-home" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
       {/* Announcement Banner */}
       {settings.announcement?.visible && settings.announcement?.text && (
@@ -218,7 +231,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
             <line x1="12" y1="9" x2="12" y2="13"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <span>{settings.announcement.text}</span>
+          <span>{t(settings.announcement.text)}</span>
         </div>
       )}
 
@@ -233,32 +246,18 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           </a>
           
           <nav className="nav-links">
-            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="nav-link active">Menu</button>
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="nav-link nav-prominent active">Menu</button>
             <button onClick={() => {
               const el = document.getElementById('footer-contact');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }} className="nav-link">Kontakt</button>
+            }} className="nav-link nav-prominent">{t("Kontakt")}</button>
             <a href="/admin" className="nav-link">Admin</a>
           </nav>
 
           <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <a href="/admin" className="mobile-only-admin">Admin</a>
             {/* Cart Trigger */}
-            <button 
-              id="cart-trigger-btn"
-              onClick={() => setIsCartOpen(true)} 
-              className="btn btn-secondary btn-circle"
-              style={{ position: 'relative' }}
-              aria-label="Nákupní košík"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
-                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
-              </svg>
-              {cartItemCount > 0 && (
-                <span className="cart-floating-badge">{cartItemCount}</span>
-              )}
-            </button>
+
           </div>
         </div>
       </header>
@@ -272,13 +271,13 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           <div className="hero-overlay"></div>
           <div className="container">
             <div className="hero-content">
-              <span className="hero-badge">Zrozeno v Torontu 🇨🇦 · Vyrobeno v Praze s láskou ❤️</span>
+              <span className="hero-badge">{t("Zrozeno v Torontu 🇨🇦 · Vyrobeno v Praze s láskou ❤️")}</span>
               <h1 className="hero-title" id="main-hero-title">
-                {settings.heroTitle.split('Choco Choo')[0]}
+                {t(settings.heroTitle).split('Choco Choo')[0]}
                 <span>Choco Choo</span>
-                {settings.heroTitle.split('Choco Choo')[1]}
+                {t(settings.heroTitle).split('Choco Choo')[1]}
               </h1>
-              <p className="hero-subtitle" id="main-hero-subtitle">{settings.heroSubtitle}</p>
+              <p className="hero-subtitle" id="main-hero-subtitle">{t(settings.heroSubtitle)}</p>
               
               <div className="hero-features">
                 <div className="hero-feature">
@@ -287,7 +286,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                     <line x1="3" y1="6" x2="21" y2="6"/>
                     <path d="M16 10a4 4 0 0 1-8 0"/>
                   </svg>
-                  Objednávejte u pultu — na místě i s sebou
+                  {t("Objednávejte u pultu — na místě i s sebou")}
                 </div>
               </div>
             </div>
@@ -299,7 +298,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           <section className="popular-section">
             <div className="container">
               <h2 className="section-title">
-                <span>⭐</span> Naše nejoblíbenější
+                <span>⭐</span> {t("Naše nejoblíbenější")}
               </h2>
               <div className="popular-scroll">
                 {popularItems.map((item) => (
@@ -310,7 +309,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                   >
                     <div className="popular-img-wrapper">
                       {item.image ? (
-                        <img src={item.image} alt={item.name} className="popular-img" loading="lazy" />
+                        <img src={item.image} alt={itemName(item)} className="popular-img" loading="lazy" />
                       ) : (
                         <div className="placeholder-card-img">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -322,7 +321,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                         </div>
                       )}
                     </div>
-                    <div className="popular-name">{item.name}</div>
+                    <div className="popular-name">{itemName(item)}</div>
                     <div className="popular-price">{formatPrice(item.price)}</div>
                   </div>
                 ))}
@@ -363,7 +362,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                     <div key={item.id} className="product-card">
                       <div className="product-img-wrapper" onClick={() => setSelectedItem(item)} style={{ cursor: 'pointer' }}>
                         {item.image ? (
-                          <img src={item.image} alt={item.name} className="product-img" loading="lazy" />
+                          <img src={item.image} alt={itemName(item)} className="product-img" loading="lazy" />
                         ) : (
                           <div className="placeholder-card-img">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -371,16 +370,16 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                               <circle cx="8.5" cy="8.5" r="1.5"/>
                               <polyline points="21 15 16 10 5 21"/>
                             </svg>
-                            <span>Bez obrázku</span>
+                            <span>{t("Bez obrázku")}</span>
                           </div>
                         )}
                       </div>
                       <div className="product-info">
                         <div className="product-header">
-                          <h4 className="product-name" onClick={() => setSelectedItem(item)} style={{ cursor: 'pointer' }}>{item.name}</h4>
+                          <h4 className="product-name" onClick={() => setSelectedItem(item)} style={{ cursor: 'pointer' }}>{itemName(item)}</h4>
                           <span className="product-price">{formatPrice(item.price)}</span>
                         </div>
-                        <p className="product-desc">{item.description || 'Výtečný dezert z prémiových surovin.'}</p>
+                        <p className="product-desc">{itemDescription(item) || t("Výtečný dezert z prémiových surovin.")}</p>
                         
                         <div className="product-actions">
                           <span className="product-tag">{cat.category}</span>
@@ -392,7 +391,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                               <line x1="12" y1="5" x2="12" y2="19"/>
                               <line x1="5" y1="12" x2="19" y2="12"/>
                             </svg>
-                            Přidat
+                            {t("Přidat")}
                           </button>
                         </div>
                       </div>
@@ -415,7 +414,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
               <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
               <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
             </svg>
-            Váš výběr ({cartItemCount})
+            {t("Váš výběr (")}{cartItemCount})
           </h3>
           <button className="cart-close-btn" onClick={() => setIsCartOpen(false)}>&times;</button>
         </div>
@@ -423,23 +422,24 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
         <div className="cart-items">
           {cart.length === 0 ? (
             <div className="cart-empty-message">
-              <p>Košík je prázdný</p>
-              <p style={{ fontSize: '12px', marginTop: '10px' }}>Vyberte si ze sladkého menu Choco Choo!</p>
+              <p>{t("Košík je prázdný")}</p>
+              <p style={{ fontSize: '12px', marginTop: '10px' }}>{t("Vyberte si ze sladkého menu Choco Choo!")}</p>
             </div>
           ) : (
-            cart.map(({ item, quantity }) => (
+            cart.map(({ item, quantity, addOnIds = [], note = '' }) => (
               <div key={item.id} className="cart-item">
-                <img src={item.image || '/logo.jpg'} alt={item.name} className="cart-item-img" />
+                <img src={item.image || '/logo.jpg'} alt={itemName(item)} className="cart-item-img" />
                 <div className="cart-item-details">
-                  <h4 className="cart-item-name">{item.name}</h4>
-                  <div className="cart-item-price">{formatPrice(item.price * quantity)}</div>
+                  <h4 className="cart-item-name">{itemName(item)}</h4>
+                  <CartOptions extras={addOns.some(a => a.id === item.id) ? [] : addOns} selected={addOnIds} note={note} onChange={changes => customizeItem(item.id,changes)} />
+                  <div className="cart-item-price">{formatPrice(linePrice({item,quantity,addOnIds}, addOns) * quantity)}</div>
                   <div className="cart-item-controls">
                     <div className="quantity-control">
                       <button className="quantity-btn" onClick={() => updateQuantity(item.id, -1)}>-</button>
                       <span className="quantity-val">{quantity}</span>
                       <button className="quantity-btn" onClick={() => updateQuantity(item.id, 1)}>+</button>
                     </div>
-                    <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>Odebrat</button>
+                    <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>{t("Odebrat")}</button>
                   </div>
                 </div>
               </div>
@@ -450,18 +450,18 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
         {cart.length > 0 && (
           <div className="cart-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
             <div className="cart-summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Položky</span>
+              <span>{t("Položky")}</span>
               <span>{cartItemCount}x</span>
             </div>
             <div className="cart-summary-total" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>
-              <span>Celkem k placení</span>
+              <span>{t("Celkem k placení")}</span>
               <span>{formatPrice(cartTotal)}</span>
             </div>
             
             <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
                 <label className="form-label" style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                  Metoda platby *
+                  {t("Metoda platby *")}
                 </label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
@@ -470,7 +470,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                     style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     onClick={() => setPaymentMethod('cash')}
                   >
-                    💵 Hotovost
+                    {t("💵 Hotovost")}
                   </button>
                   <button
                     type="button"
@@ -478,7 +478,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                     style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     onClick={() => setPaymentMethod('credit')}
                   >
-                    💳 Karta
+                    {t("💳 Karta")}
                   </button>
                   <button
                     type="button"
@@ -493,14 +493,14 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
               
               <div>
                 <label className="form-label" htmlFor="table-or-name-input" style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                  Číslo stolu / Jméno
+                  {t("Číslo stolu / Jméno")}
                 </label>
                 <input
                   id="table-or-name-input"
                   type="text"
                   className="form-input"
                   style={{ width: '100%', padding: '10px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color-light)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }}
-                  placeholder="Např. Stůl 5, Yaman..."
+                  placeholder={t("Např. Stůl 5, Yaman...")}
                   value={tableOrName}
                   onChange={(e) => setTableOrName(e.target.value)}
                 />
@@ -512,12 +512,12 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                 style={{ width: '100%', padding: '12px', fontSize: '15px', fontWeight: 700 }}
                 disabled={isSubmittingOrder}
               >
-                {isSubmittingOrder ? 'Odesílání...' : 'Odeslat objednávku 🛎️'}
+                {isSubmittingOrder ? t("Odesílání...") : t("Odeslat objednávku 🛎️")}
               </button>
             </form>
             
             <p className="cart-instruction" style={{ marginTop: '15px', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.4' }}>
-              📢 Vaše objednávka se odešle přímo do kuchyně. Zaplatíte na místě zvolenou metodou.
+              {t("📢 Vaše objednávka se odešle přímo do kuchyně. Zaplatíte na místě zvolenou metodou.")}
             </p>
           </div>
         )}
@@ -528,13 +528,13 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
         <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">{selectedItem.name}</h3>
+              <h3 className="modal-title">{itemName(selectedItem)}</h3>
               <button className="cart-close-btn" onClick={() => setSelectedItem(null)}>&times;</button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/10', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-tertiary)' }}>
                 {selectedItem.image ? (
-                  <img src={selectedItem.image} alt={selectedItem.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={selectedItem.image} alt={itemName(selectedItem)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div className="placeholder-card-img" style={{ height: '100%' }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: '48px', height: '48px' }}>
@@ -542,22 +542,22 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    <span>Bez obrázku</span>
+                    <span>{t("Bez obrázku")}</span>
                   </div>
                 )}
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '14px', color: 'var(--color-gold)', fontWeight: 700 }}>Cena</span>
+                  <span style={{ fontSize: '14px', color: 'var(--color-gold)', fontWeight: 700 }}>{t("Cena")}</span>
                   <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-gold-hover)' }}>{formatPrice(selectedItem.price)}</span>
                 </div>
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  {selectedItem.description || 'Tento jedinečný sladký produkt je ručně vyráběn z těch nejlepších čokoládových surovin a čerstvých ingrediencí.'}
+                  {itemDescription(selectedItem) || t("Tento jedinečný sladký produkt je ručně vyráběn z těch nejlepších čokoládových surovin a čerstvých ingrediencí.")}
                 </p>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Zavřít</button>
+              <button className="btn btn-secondary" onClick={() => setSelectedItem(null)}>{t("Zavřít")}</button>
               <button 
                 className="btn btn-primary"
                 onClick={() => {
@@ -565,7 +565,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                   setSelectedItem(null);
                 }}
               >
-                Přidat do košíku
+                {t("Přidat do košíku")}
               </button>
             </div>
           </div>
@@ -579,14 +579,14 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
             <div className="footer-info-brand">
               <h3 className="footer-title">Choco Choo</h3>
               <p className="footer-desc" style={{ marginBottom: '15px' }}>
-                Palačinky · Vafle · Crofle · Belgická čokoláda. Zrozeno v Torontu, vyrobeno s láskou a řemeslnou péčí v Žižkově, Praha.
+                {t("Palačinky · Vafle · Crofle · Belgická čokoláda. Zrozeno v Torontu, vyrobeno s láskou a řemeslnou péčí v Žižkově, Praha.")}
               </p>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
                 <span className={`active-indicator ${isOpen ? 'open' : 'closed'}`} id="store-status-indicator">
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
-                  {isOpen ? 'Otevřeno' : 'Zavřeno'}
+                  {isOpen ? t("Otevřeno") : t("Zavřeno")}
                 </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Dnes: 16:00–02:00</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t("Dnes: 16:00–02:00")}</span>
               </div>
               <a href="/admin" className="btn btn-secondary btn-sm" style={{ fontSize: '11px', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 🔐 Admin Panel
@@ -594,7 +594,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
             </div>
 
             <div>
-              <h4 className="footer-column-title">Kde nás najdete</h4>
+              <h4 className="footer-column-title">{t("Kde nás najdete")}</h4>
               <div className="footer-contact-item">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -623,16 +623,17 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
             </div>
 
             <div>
-              <h4 className="footer-column-title">Otevírací doba</h4>
-              {Object.entries(settings.openingHours).map(([day, hours]) => {
+              <h4 className="footer-column-title">{t("Otevírací doba")}</h4>
+              {WEEKDAYS.filter(day => settings.openingHours[day]).map(day => {
+                const hours = settings.openingHours[day];
                 const daysInCzech: Record<string, string> = {
-                  Monday: 'Pondělí',
-                  Tuesday: 'Úterý',
-                  Wednesday: 'Středa',
-                  Thursday: 'Čtvrtek',
-                  Friday: 'Pátek',
-                  Saturday: 'Sobota',
-                  Sunday: 'Neděle'
+                  Monday: t("Pondělí"),
+                  Tuesday: t("Úterý"),
+                  Wednesday: t("Středa"),
+                  Thursday: t("Čtvrtek"),
+                  Friday: t("Pátek"),
+                  Saturday: t("Sobota"),
+                  Sunday: t("Neděle")
                 };
                 
                 // Highlight current day
@@ -643,7 +644,7 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
                 return (
                   <div key={day} className={`footer-hours-row ${isToday ? 'today' : ''}`}>
                     <span>{daysInCzech[day] || day}</span>
-                    <span>{hours.closed ? 'Zavřeno' : `${hours.open} – ${hours.close}`}</span>
+                    <span>{hours.closed ? t("Zavřeno") : `${hours.open} – ${hours.close}`}</span>
                   </div>
                 );
               })}
@@ -651,60 +652,32 @@ export default function HomeClient({ initialMenu, initialSettings }: HomeClientP
           </div>
 
           <div className="footer-bottom">
-            <p className="footer-copy">&copy; {new Date().getFullYear()} Choco Choo Prague. Všechna práva vyhrazena.</p>
-            <p className="footer-copy" style={{ fontSize: '11px' }}>Zrozeno v Torontu 🇨🇦 · Vyrobeno v Praze 🇨🇿</p>
+            <p className="footer-copy">&copy; {new Date().getFullYear()} {t("Choco Choo Prague. Všechna práva vyhrazena.")}</p>
+            <p className="footer-copy" style={{ fontSize: '11px' }}>{t("Zrozeno v Torontu 🇨🇦 · Vyrobeno v Praze 🇨🇿")}</p>
           </div>
         </div>
       </footer>
 
       {/* Placed Order Confirmation Modal */}
-      {placedOrder && (
-        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '450px', width: '90%', textAlign: 'center', padding: '30px' }}>
-            <div style={{ fontSize: '50px', marginBottom: '15px' }}>🎉</div>
-            <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-gold)', marginBottom: '10px' }}>
-              Objednávka odeslána!
-            </h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Děkujeme! Vaše objednávka byla odeslána a začínáme ji připravovat.
-            </p>
-            
-            <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Číslo pro Vás:</span>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>#{placedOrder.customerNumber}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Kód prodejce:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>{placedOrder.id}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Platební metoda:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>
-                  {placedOrder.paymentMethod === 'cash' 
-                    ? '💵 Hotovost' 
-                    : placedOrder.paymentMethod === 'applepay' 
-                    ? '🍎 Apple Pay' 
-                    : '💳 Karta'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Celkem k úhradě:</span>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-gold)' }}>{formatPrice(placedOrder.totalPrice)}</span>
-              </div>
-            </div>
-            
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '25px', lineHeight: 1.5 }}>
-              📢 Zapamatujte si číslo objednávky <strong>(#{placedOrder.customerNumber})</strong>. Obsluha jej použije pro doručení nebo k vyzvání u pokladny.
-            </p>
-            
-            <button className="btn btn-primary" style={{ width: '100%', padding: '12px' }} onClick={() => setPlacedOrder(null)}>
-              Rozumím
+<button
+              id="cart-trigger-btn"
+              onClick={() => setIsCartOpen(true)}
+              className="btn btn-secondary btn-circle sticky-cart-trigger"
+              style={{ position: 'relative' }}
+              aria-label={t("Nákupní košík")}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+              </svg>
+              {true && (
+                <span className="cart-floating-badge">{cartItemCount}</span>
+              )}
             </button>
-          </div>
-        </div>
-      )}
-
+      <LanguageSwitch />
+      <OrderTracker initialOrder={placedOrder} />
     </div>
   );
 }
+
+export default function HomeClient(props: HomeClientProps) { return <CustomerLanguageProvider><HomeClientContent {...props} /></CustomerLanguageProvider>; }

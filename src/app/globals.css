@@ -1552,3 +1552,54 @@ img {
     padding: 20px;
   }
 }
+
+/* Persistent cart and clearer storefront navigation. */
+.sticky-cart-trigger { position: fixed !important; top: 12px !important; bottom: auto !important; right: max(16px, env(safe-area-inset-right)) !important; z-index: 180 !important; background: #f6cf78 !important; color: #29190e !important; border: 2px solid #fff0c7 !important; width: 48px !important; height: 48px !important; box-shadow: 0 4px 20px #0006; }
+.header .nav-actions { padding-right: 60px; }
+.header .nav-prominent { color: #fff4d9; background: #51301f; border: 1px solid #c99b58; border-radius: 8px; padding: 8px 12px; }
+.header .nav-prominent:hover, .header .nav-prominent.active { color: #24140a; background: #f6cf78; }
+.cart-floating-badge { min-width: 22px; width: auto; padding: 0 4px; background: #a51e32; color: white; }
+.cart-item-details { min-width: 0; flex: 1; }
+.cart-customization { margin: 10px 0; font-size: 12px; }
+.cart-customization summary { cursor: pointer; color: var(--color-gold); padding: 8px 0; font-weight: 700; }
+.addon-options { max-height: 200px; overflow-y: auto; display: grid; gap: 8px; padding: 8px 0; }
+.addon-options label { display: flex; align-items: center; gap: 8px; }
+.addon-options label span { flex: 1; }
+.addon-options input { accent-color: #d3a65a; width: 18px; height: 18px; }
+.option-help { color: var(--text-secondary); }
+.note-label { display: grid; gap: 5px; margin-top: 8px; }
+.note-label textarea { width: 100%; resize: vertical; color: var(--text-primary); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font: inherit; }
+.order-extra, .order-note { display: block; color: var(--text-secondary); margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.order-note { color: #ffe4ab; }
+.prep-controls { width: 100%; display: grid; gap: 8px; font-size: 12px; }
+.prep-controls > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.prep-controls .btn { min-width: 52px; }
+.order-tracker { position: fixed; left: 16px; bottom: max(16px, env(safe-area-inset-bottom)); width: min(440px, calc(100vw - 32px)); z-index: 150; border: 1px solid #d5ac68; border-radius: 14px; background: #261b14; color: #fff4df; box-shadow: 0 8px 30px #0008; max-height: 45dvh; overflow: auto; }
+.tracker-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; }
+.tracker-heading strong { font-size: 14px; }
+.tracker-heading button { color: #ffe1a2; border: 1px solid #ad8650; border-radius: 6px; padding: 5px 8px; background: transparent; cursor: pointer; }
+.tracker-body { padding: 0 14px 14px; font-size: 13px; line-height: 1.6; }
+.tracker-body small { color: #ded0bb; }
+.order-tracker.is-ready { border-color: #6ce3b9; background: #123c30; }
+.countdown { font-size: 26px; font-variant-numeric: tabular-nums; display: inline-block; }
+@media (max-width: 600px) { .qr-menu-header { padding-right: 76px; } .cart-item-img { width: 48px; height: 48px; } }
+@media (max-width: 768px) {
+  .header .nav-links { display: flex; gap: 6px; }
+  .header .nav-links > a { display: none; }
+  .header .nav-prominent { font-size: 11px; letter-spacing: 0; padding: 7px 8px; }
+  .header-container { padding-left: 12px; gap: 6px; }
+  .header .mobile-only-admin { font-size: 11px; }
+  .header .logo-img { max-width: 64px; object-fit: contain; }
+}
+
+/* The language choice stays beside the cart without crowding mobile navigation. */
+.language-switch { position: fixed; top: 18px; right: max(78px, calc(env(safe-area-inset-right) + 78px)); z-index: 180; display: flex; padding: 3px; gap: 2px; border: 1px solid #cfa96c; border-radius: 999px; background: #261b14; box-shadow: 0 3px 12px #0005; }
+.language-switch button { min-width: 34px; min-height: 32px; padding: 5px 7px; border: 0; border-radius: 999px; background: transparent; color: #fff1d6; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.language-switch button[aria-pressed="true"] { background: #ffe1a2; color: #28180b; }
+.language-switch button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.header .nav-actions { padding-right: 148px; }
+@media (max-width: 600px) {
+  .customer-home { padding-top: 64px; }
+  .header .nav-actions { padding-right: 0; }
+  .header-container { justify-content: space-between; }
+}

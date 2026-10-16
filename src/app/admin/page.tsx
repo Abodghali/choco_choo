@@ -1,5 +1,6 @@
 'use client';
 
+import { WEEKDAYS, PREP_MINUTES } from '@/lib/order-options';
 import React, { useState, useEffect } from 'react';
 import { MenuItem, MenuCategory, StoreSettings, OpeningHours, Order } from '@/lib/db';
 import { formatPrice } from '@/lib/utils';
@@ -135,12 +136,12 @@ export default function AdminPage() {
     return () => clearInterval(interval);
   }, [authenticated, soundEnabled]);
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = async (orderId: string, status: string, prepMinutes?: number) => {
     try {
       const res = await fetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status })
+        body: JSON.stringify({ orderId, status, prepMinutes })
       });
       if (res.ok) {
         showToast('Stav objednávky aktualizován');
@@ -884,6 +885,8 @@ export default function AdminPage() {
                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                                   <span>
                                     <strong style={{ color: 'var(--color-gold)' }}>{item.quantity}x</strong> {item.name}
+                                    {item.addOns?.map(extra => <small className="order-extra" key={extra.id}>+ {extra.name} ({formatPrice(extra.price)} / kus)</small>)}
+                                    {item.note && <small className="order-note">Poznámka: {item.note}</small>}
                                   </span>
                                   <span style={{ color: 'var(--text-secondary)' }}>
                                     {formatPrice(item.price * item.quantity)}
@@ -924,14 +927,12 @@ export default function AdminPage() {
                           {/* Actions */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              {order.status === 'pending' && (
-                                <button 
-                                  className="btn btn-primary" 
-                                  style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
-                                  onClick={() => updateOrderStatus(order.id, 'preparing')}
-                                >
-                                  🍳 Vařit / Připravit
-                                </button>
+                              {(order.status === 'pending' || order.status === 'preparing') && (
+                                <div className="prep-controls">
+                                  <strong>{order.status === 'pending' ? 'Přijmout objednávku · doba přípravy' : 'Upravit zbývající čas'}</strong>
+                                  <div>{PREP_MINUTES.map(minutes => <button key={minutes} type="button" className="btn btn-secondary btn-sm" disabled={order.paymentMethod !== 'cash' && order.paymentStatus !== 'paid'} onClick={() => updateOrderStatus(order.id,'preparing',minutes)}>{minutes} min</button>)}</div>
+                                  {order.readyAt && <small>Odhad dokončení: {new Date(order.readyAt).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Prague'})}</small>}
+                                </div>
                               )}
                               {order.status === 'preparing' && (
                                 <button 
@@ -939,7 +940,7 @@ export default function AdminPage() {
                                   style={{ flex: 1, padding: '8px 12px', fontSize: '13px', backgroundColor: '#2ec4b6', borderColor: '#2ec4b6' }}
                                   onClick={() => updateOrderStatus(order.id, 'completed')}
                                 >
-                                  ✅ Dokončit
+                                  ✅ Připraveno k vyzvednutí
                                 </button>
                               )}
                               {order.status !== 'completed' && order.status !== 'cancelled' && (
@@ -961,8 +962,8 @@ export default function AdminPage() {
                                 onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                               >
                                 <option value="pending">Nová (Čekající)</option>
-                                <option value="preparing">V přípravě</option>
-                                <option value="completed">Dokončená</option>
+                                <option value="preparing" disabled>V přípravě — zvolte čas výše</option>
+                                <option value="completed">Připravená k vyzvednutí</option>
                                 <option value="cancelled">Zrušená</option>
                               </select>
                               
@@ -1294,7 +1295,8 @@ export default function AdminPage() {
                 <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '25px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '15px', color: 'var(--color-gold)' }}>Otevírací doba</h3>
                   
-                  {Object.entries(settings.openingHours).map(([day, hours]) => {
+                  {WEEKDAYS.filter(day => settings.openingHours[day]).map(day => {
+                    const hours = settings.openingHours[day];
                     const daysInCzech: Record<string, string> = {
                       Monday: 'Pondělí',
                       Tuesday: 'Úterý',

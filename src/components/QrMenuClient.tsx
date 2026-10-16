@@ -1,5 +1,10 @@
 'use client';
+import { useCustomerLanguage, CustomerLanguageProvider, LanguageSwitch } from './CustomerLanguage';
 
+import CartOptions from './CartOptions';
+import OrderTracker, { rememberOrder } from './OrderTracker';
+import { getAddOns, linePrice, type CartLine } from '@/lib/order-options';
+import type { Order } from '@/lib/db';
 import React, { useState, useEffect, useRef } from 'react';
 import { MenuCategory, StoreSettings, MenuItem } from '@/lib/db';
 import { formatPrice } from '@/lib/utils';
@@ -9,19 +14,22 @@ interface QrMenuClientProps {
   initialSettings: StoreSettings;
 }
 
-export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuClientProps) {
+function QrMenuClientContent({ initialMenu, initialSettings }: QrMenuClientProps) {
+  const { t, itemName, itemDescription } = useCustomerLanguage();
   const [menu] = useState<MenuCategory[]>(initialMenu);
   const [settings] = useState<StoreSettings>(initialSettings);
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   // Cart & Order Placement State
-  const [cart, setCart] = useState<{ item: MenuItem; quantity: number }[]>([]);
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const addOns = getAddOns(menu);
+  const customizeItem = (id: string, changes: { addOnIds: string[]; note: string }) => setCart(prev => prev.map(line => line.item.id === id ? {...line,...changes} : line));
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit' | 'applepay'>('cash');
   const [tableOrName, setTableOrName] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
-  const [placedOrder, setPlacedOrder] = useState<any | null>(null);
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -51,13 +59,13 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
           return;
         }
         if (order.paymentStatus === 'failed') {
-          alert('Platba se nezdařila. Obraťte se na obsluhu.');
+          alert(t("Platba se nezdařila. Obraťte se na obsluhu."));
           window.history.replaceState({}, document.title, window.location.pathname);
           return;
         }
       } catch { if (cancelled) return; }
       if (++attempts < 20) timer = setTimeout(check, 3000);
-      else alert('Platba zatím není potvrzena. Nevytvářejte další objednávku; obraťte se na obsluhu.');
+      else alert(t("Platba zatím není potvrzena. Nevytvářejte další objednávku; obraťte se na obsluhu."));
     };
     void check();
     return () => { cancelled = true; clearTimeout(timer); };
@@ -100,6 +108,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
 
   // Cart operations
   const addToCart = (item: MenuItem) => {
+    setIsCartOpen(true);
     setCart(prev => {
       const existing = prev.find(i => i.item.id === item.id);
       if (existing) {
@@ -117,7 +126,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
           return newQty > 0 ? { ...i, quantity: newQty } : null;
         }
         return i;
-      }).filter(Boolean) as { item: MenuItem; quantity: number }[];
+      }).filter(Boolean) as CartLine[];
     });
   };
 
@@ -139,7 +148,9 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
             id: i.item.id,
             name: i.item.name,
             price: i.item.price,
-            quantity: i.quantity
+            quantity: i.quantity,
+            addOnIds: i.addOnIds || [],
+            note: i.note || ''
           })),
           paymentMethod,
           tableOrName,
@@ -149,6 +160,8 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
       
       const data = await res.json();
       if (res.ok && data.success) {
+        rememberOrder(data.order.id);
+        setPlacedOrder(data.order);
         if (data.paymentUrl) {
           window.location.href = data.paymentUrl;
         } else {
@@ -157,17 +170,17 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
           setIsCartOpen(false); // Close cart drawer
         }
       } else {
-        alert(data.error || 'Nastala chyba při odesílání objednávky.');
+        alert(t("Nastala chyba při odesílání objednávky."));
       }
     } catch (err) {
       console.error(err);
-      alert('Chyba komunikace se serverem.');
+      alert(t('Chyba komunikace se serverem.'));
     } finally {
       setIsSubmittingOrder(false);
     }
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.item.price * item.quantity), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + (linePrice(item, addOns) * item.quantity), 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -177,9 +190,9 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
         <img src="/logo.jpg" alt="Choco Choo" className="qr-menu-logo" />
         <h1 className="qr-menu-title">Choco Choo Prague</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-          Palačinky · Vafle · Crofle · Belgická čokoláda
+          {t("Palačinky · Vafle · Crofle · Belgická čokoláda")}
         </p>
-        <span className="qr-menu-table">Objednávka u pultu 🛎️</span>
+        <span className="qr-menu-table">{t("Objednávka u pultu 🛎️")}</span>
       </div>
 
       {/* Sticky category navigation */}
@@ -222,7 +235,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
                         onClick={() => setSelectedItem(item)}
                         style={{ cursor: 'pointer' }}
                       >
-                        <span className="qr-addon-name">{item.name}</span>
+                        <span className="qr-addon-name">{itemName(item)}</span>
                         <span className="qr-addon-price">{formatPrice(item.price)}</span>
                       </div>
                     );
@@ -236,17 +249,17 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
                       style={{ cursor: 'pointer' }}
                     >
                       {item.image && (
-                        <img src={item.image} alt={item.name} className="qr-item-img" loading="lazy" />
+                        <img src={item.image} alt={itemName(item)} className="qr-item-img" loading="lazy" />
                       )}
                       <div className="qr-item-info">
                         <div>
-                          <h3 className="qr-item-name">{item.name}</h3>
-                          <p className="qr-item-desc">{item.description || 'Čerstvě vyrobený dezert z belgické čokolády.'}</p>
+                          <h3 className="qr-item-name">{itemName(item)}</h3>
+                          <p className="qr-item-desc">{itemDescription(item) || t("Čerstvě vyrobený dezert z belgické čokolády.")}</p>
                         </div>
                         <div className="qr-item-footer">
                           <span className="qr-item-price">{formatPrice(item.price)}</span>
                           <span className="qr-item-detail-btn">
-                            <span>Detail</span>
+                            <span>{t("Detail")}</span>
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <polyline points="9 18 15 12 9 6"/>
                             </svg>
@@ -279,7 +292,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
         whiteSpace: 'nowrap',
         backdropFilter: 'blur(8px)'
       }}>
-        📍 {settings.address} | 💳 Hotovost i karty
+        📍 {settings.address} {t("| 💳 Hotovost i karty")}
       </div>
 
       {/* Detail Modal */}
@@ -287,35 +300,35 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
         <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
             <div className="modal-header">
-              <h3 className="modal-title">{selectedItem.name}</h3>
+              <h3 className="modal-title">{itemName(selectedItem)}</h3>
               <button className="cart-close-btn" onClick={() => setSelectedItem(null)}>&times;</button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/10', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-tertiary)' }}>
                 {selectedItem.image ? (
-                  <img src={selectedItem.image} alt={selectedItem.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={selectedItem.image} alt={itemName(selectedItem)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div className="placeholder-card-img" style={{ height: '100%' }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: '40px', height: '40px' }}>
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    <span>Bez obrázku</span>
+                    <span>{t("Bez obrázku")}</span>
                   </div>
                 )}
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Cena</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t("Cena")}</span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>{formatPrice(selectedItem.price)}</span>
                 </div>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  {selectedItem.description || 'Sladký pokrm připravovaný z belgické čokolády a prémiových ingrediencí.'}
+                  {itemDescription(selectedItem) || t("Sladký pokrm připravovaný z belgické čokolády a prémiových ingrediencí.")}
                 </p>
               </div>
             </div>
             <div className="modal-footer" style={{ padding: '15px', display: 'flex', gap: '10px' }}>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setSelectedItem(null)}>Zavřít</button>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setSelectedItem(null)}>{t("Zavřít")}</button>
               <button 
                 className="btn btn-primary"
                 style={{ flex: 2 }}
@@ -324,7 +337,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
                   setSelectedItem(null);
                 }}
               >
-                Přidat do košíku
+                {t("Přidat do košíku")}
               </button>
             </div>
           </div>
@@ -332,14 +345,14 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
       )}
 
       {/* Floating Cart Trigger */}
-      {cartItemCount > 0 && (
+      {true && (
         <button 
           id="cart-trigger-btn"
           onClick={() => setIsCartOpen(true)} 
-          className="btn btn-primary"
+          className="btn btn-primary sticky-cart-trigger"
           style={{ 
             position: 'fixed', 
-            bottom: '75px', 
+            top: '12px',
             right: '20px', 
             borderRadius: '50%', 
             width: '60px', 
@@ -350,7 +363,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
             boxShadow: 'var(--shadow-lg)',
             zIndex: 100
           }}
-          aria-label="Nákupní košík"
+          aria-label={t("Nákupní košík")}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
@@ -364,14 +377,14 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
 
       {/* Cart Drawer Menu */}
       <div className={`cart-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)}></div>
-      <div className={`cart-drawer ${isCartOpen ? 'open' : ''}`} id="cart-drawer-menu" style={{ zIndex: 101 }}>
+      <div className={`cart-drawer ${isCartOpen ? 'open' : ''}`} id="cart-drawer-menu">
         <div className="cart-header">
           <h3 className="cart-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
               <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
             </svg>
-            Váš výběr ({cartItemCount})
+            {t("Váš výběr (")}{cartItemCount})
           </h3>
           <button className="cart-close-btn" onClick={() => setIsCartOpen(false)}>&times;</button>
         </div>
@@ -379,23 +392,24 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
         <div className="cart-items">
           {cart.length === 0 ? (
             <div className="cart-empty-message">
-              <p>Košík je prázdný</p>
-              <p style={{ fontSize: '12px', marginTop: '10px' }}>Vyberte si ze sladkého menu Choco Choo!</p>
+              <p>{t("Košík je prázdný")}</p>
+              <p style={{ fontSize: '12px', marginTop: '10px' }}>{t("Vyberte si ze sladkého menu Choco Choo!")}</p>
             </div>
           ) : (
-            cart.map(({ item, quantity }) => (
+            cart.map(({ item, quantity, addOnIds = [], note = '' }) => (
               <div key={item.id} className="cart-item">
-                <img src={item.image || '/logo.jpg'} alt={item.name} className="cart-item-img" />
+                <img src={item.image || '/logo.jpg'} alt={itemName(item)} className="cart-item-img" />
                 <div className="cart-item-details">
-                  <h4 className="cart-item-name">{item.name}</h4>
-                  <div className="cart-item-price">{formatPrice(item.price * quantity)}</div>
+                  <h4 className="cart-item-name">{itemName(item)}</h4>
+                  <CartOptions extras={addOns.some(a => a.id === item.id) ? [] : addOns} selected={addOnIds} note={note} onChange={changes => customizeItem(item.id,changes)} />
+                  <div className="cart-item-price">{formatPrice(linePrice({item,quantity,addOnIds}, addOns) * quantity)}</div>
                   <div className="cart-item-controls">
                     <div className="quantity-control">
                       <button className="quantity-btn" onClick={() => updateQuantity(item.id, -1)}>-</button>
                       <span className="quantity-val">{quantity}</span>
                       <button className="quantity-btn" onClick={() => updateQuantity(item.id, 1)}>+</button>
                     </div>
-                    <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>Odebrat</button>
+                    <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>{t("Odebrat")}</button>
                   </div>
                 </div>
               </div>
@@ -406,18 +420,18 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
         {cart.length > 0 && (
           <div className="cart-footer" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
             <div className="cart-summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Položky</span>
+              <span>{t("Položky")}</span>
               <span>{cartItemCount}x</span>
             </div>
             <div className="cart-summary-total" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>
-              <span>Celkem k placení</span>
+              <span>{t("Celkem k placení")}</span>
               <span>{formatPrice(cartTotal)}</span>
             </div>
             
             <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
                 <label className="form-label" style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                  Metoda platby *
+                  {t("Metoda platby *")}
                 </label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
@@ -426,7 +440,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
                     style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     onClick={() => setPaymentMethod('cash')}
                   >
-                    💵 Hotovost
+                    {t("💵 Hotovost")}
                   </button>
                   <button
                     type="button"
@@ -434,7 +448,7 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
                     style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     onClick={() => setPaymentMethod('credit')}
                   >
-                    💳 Karta
+                    {t("💳 Karta")}
                   </button>
                   <button
                     type="button"
@@ -449,14 +463,14 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
               
               <div>
                 <label className="form-label" htmlFor="qr-table-or-name-input" style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                  Číslo stolu / Jméno
+                  {t("Číslo stolu / Jméno")}
                 </label>
                 <input
                   id="qr-table-or-name-input"
                   type="text"
                   className="form-input"
                   style={{ width: '100%', padding: '10px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color-light)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }}
-                  placeholder="Např. Stůl 5, Yaman..."
+                  placeholder={t("Např. Stůl 5, Yaman...")}
                   value={tableOrName}
                   onChange={(e) => setTableOrName(e.target.value)}
                 />
@@ -468,64 +482,22 @@ export default function QrMenuClient({ initialMenu, initialSettings }: QrMenuCli
                 style={{ width: '100%', padding: '12px', fontSize: '15px', fontWeight: 700 }}
                 disabled={isSubmittingOrder}
               >
-                {isSubmittingOrder ? 'Odesílání...' : 'Odeslat objednávku 🛎️'}
+                {isSubmittingOrder ? t("Odesílání...") : t("Odeslat objednávku 🛎️")}
               </button>
             </form>
             
             <p className="cart-instruction" style={{ marginTop: '15px', fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.4' }}>
-              📢 Vaše objednávka se odešle přímo do kuchyně. Zaplatíte na místě zvolenou metodou.
+              {t("📢 Vaše objednávka se odešle přímo do kuchyně. Zaplatíte na místě zvolenou metodou.")}
             </p>
           </div>
         )}
       </div>
 
       {/* Placed Order Confirmation Modal */}
-      {placedOrder && (
-        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '450px', width: '90%', textAlign: 'center', padding: '30px' }}>
-            <div style={{ fontSize: '50px', marginBottom: '15px' }}>🎉</div>
-            <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-gold)', marginBottom: '10px' }}>
-              Objednávka odeslána!
-            </h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Děkujeme! Vaše objednávka byla odeslána a začínáme ji připravovat.
-            </p>
-            
-            <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Číslo pro Vás:</span>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-gold)' }}>#{placedOrder.customerNumber}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Kód prodejce:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>{placedOrder.id}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Platební metoda:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>
-                  {placedOrder.paymentMethod === 'cash' 
-                    ? '💵 Hotovost' 
-                    : placedOrder.paymentMethod === 'applepay' 
-                    ? '🍎 Apple Pay' 
-                    : '💳 Karta'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Celkem k úhradě:</span>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-gold)' }}>{formatPrice(placedOrder.totalPrice)}</span>
-              </div>
-            </div>
-            
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '25px', lineHeight: 1.5 }}>
-              📢 Zapamatujte si číslo objednávky <strong>(#{placedOrder.customerNumber})</strong>. Obsluha jej použije pro doručení nebo k vyzvání u pokladny.
-            </p>
-            
-            <button className="btn btn-primary" style={{ width: '100%', padding: '12px' }} onClick={() => setPlacedOrder(null)}>
-              Rozumím
-            </button>
-          </div>
-        </div>
-      )}
+      <LanguageSwitch />
+      <OrderTracker initialOrder={placedOrder} />
     </div>
   );
 }
+
+export default function QrMenuClient(props: QrMenuClientProps) { return <CustomerLanguageProvider><QrMenuClientContent {...props} /></CustomerLanguageProvider>; }

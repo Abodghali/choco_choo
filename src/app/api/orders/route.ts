@@ -1,3 +1,4 @@
+import { buildOrderItems, PREP_MINUTES } from '@/lib/order-options';
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrders, getOrder, updateOrder, deleteOrders, createNewOrder, getMenu, withOrderLock, type OrderItem } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
     if (id) {
       const order = await getOrder(id);
       if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      return NextResponse.json(await refreshPayment(order));
+      return NextResponse.json({ ...await refreshPayment(order), serverNow: Date.now() });
     }
     const orders = await getOrders();
     // Reconcile outstanding payments even if the buyer never returned from SumUp.
@@ -28,15 +29,9 @@ export async function POST(req: NextRequest) {
   const { items, paymentMethod, tableOrName, ref } = body || {};
   if (!Array.isArray(items) || !items.length || items.length > 50 || !['cash','credit','applepay'].includes(paymentMethod) || (tableOrName !== undefined && (typeof tableOrName !== 'string' || tableOrName.length > 100))) return NextResponse.json({ error: 'Invalid order' }, { status: 400 });
   try {
-    const menu = (await getMenu()).flatMap(c => c.items);
-    const seen = new Set<string>();
-    const orderItems: OrderItem[] = [];
-    for (const entry of items) {
-      const product = menu.find(p => p.id === entry?.id);
-      if (!product || !product.available || seen.has(product.id) || !Number.isInteger(entry.quantity) || entry.quantity < 1 || entry.quantity > 50 || !Number.isFinite(product.price) || product.price <= 0) return NextResponse.json({ error: 'Invalid product or quantity' }, { status: 400 });
-      seen.add(product.id);
-      orderItems.push({ id: product.id, name: product.name, price: product.price, quantity: entry.quantity });
-    }
+    let orderItems: OrderItem[];
+    try { orderItems = buildOrderItems(items, await getMenu()); }
+    catch { return NextResponse.json({ error: 'Invalid product, add-on, quantity or note' }, { status: 400 }); }
     const totalPrice = orderItems.reduce((sum,i) => sum + Math.round(i.price * 100) * i.quantity, 0) / 100;
     if (totalPrice > 100000) return NextResponse.json({ error: 'Order too large' }, { status: 400 });
     if (paymentMethod !== 'cash' && (!process.env.SUMUP_API_KEY || !process.env.SUMUP_MERCHANT_CODE)) return NextResponse.json({ error: 'Platba kartou není nakonfigurována. Zvolte hotovost.' }, { status: 503 });
@@ -66,12 +61,13 @@ export async function PUT(req: NextRequest) {
   const blocked = mutationGuard(req); if (blocked) return blocked;
   if (!await getAuthUser(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const { orderId, status } = await readJson(req);
+    const { orderId, status, prepMinutes } = await readJson(req);
+    if ((status === 'preparing' && !PREP_MINUTES.includes(prepMinutes)) || (prepMinutes !== undefined && status !== 'preparing')) return NextResponse.json({ error: 'Choose 10, 15, 20, 25 or 30 minutes' }, { status: 400 });
     if (typeof orderId !== 'string' || !['pending','preparing','completed','cancelled'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     const order = await getOrder(orderId);
     if (!order) return NextResponse.json({ error:'Not found' }, { status:404 });
     if (order.paymentMethod !== 'cash' && order.paymentStatus !== 'paid' && ['preparing','completed'].includes(status)) return NextResponse.json({ error:'Payment not verified' }, { status:409 });
-    if (!await updateOrder(orderId,{status})) return NextResponse.json({error:'Not found'},{status:404});
+    if (!await updateOrder(orderId,{status,...(prepMinutes !== undefined ? {prepMinutes} : {})})) return NextResponse.json({error:'Not found'},{status:404});
     return NextResponse.json({success:true});
   } catch { return NextResponse.json({ error: 'Unable to update order' }, { status: 400 }); }
 }

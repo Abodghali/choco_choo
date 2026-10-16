@@ -1,3 +1,4 @@
+import { PREP_MINUTES } from './order-options';
 import { randomUUID } from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
@@ -177,6 +178,8 @@ async function saveLocalSettings(settings: StoreSettings): Promise<boolean> {
 // -------------------------------------------------------------
 
 export interface OrderItem {
+  addOns?: { id: string; name: string; price: number }[];
+  note?: string;
   id: string;
   name: string;
   price: number;
@@ -184,6 +187,9 @@ export interface OrderItem {
 }
 
 export interface Order {
+  prepMinutes?: number;
+  acceptedAt?: string;
+  readyAt?: string;
   id: string;             // Seller Order ID (e.g. ORD-20260711-0001)
   customerNumber: number; // Customer Order Number (e.g. 1, 2, 3...)
   items: OrderItem[];
@@ -220,7 +226,7 @@ export async function saveOrders(orders: Order[]): Promise<boolean> {
   if (await getSupabaseClient()) throw new Error('Bulk replacement of remote orders is disabled');
   return saveLocalOrders(orders);
 }
-export async function updateOrder(id: string, patch: Partial<Pick<Order,'status'|'paymentStatus'|'sumupCheckoutId'>>): Promise<Order | undefined> {
+export async function updateOrder(id: string, patch: Partial<Pick<Order,'status'|'paymentStatus'|'sumupCheckoutId'|'prepMinutes'>>): Promise<Order | undefined> {
   const client = await getSupabaseClient();
   if (client) {
     const { data,error } = await client.rpc('choco_update_order',{ p_id:id, p_patch:patch });
@@ -230,7 +236,13 @@ export async function updateOrder(id: string, patch: Partial<Pick<Order,'status'
   return withOrderLock(async () => {
     const orders = await getLocalOrders(); const order = orders.find(o => o.id === id);
     if (!order) return undefined;
-    const updates = { ...patch };
+    const updates: Partial<Order> = { ...patch };
+    if (patch.prepMinutes !== undefined) {
+      if (patch.status !== 'preparing' || !PREP_MINUTES.includes(patch.prepMinutes) || !['pending','preparing'].includes(order.status)) throw new Error('Invalid preparation time');
+      updates.acceptedAt = order.acceptedAt || new Date().toISOString();
+      updates.readyAt = new Date(Date.now() + patch.prepMinutes * 60000).toISOString();
+    }
+    if (patch.status === 'preparing' && !order.readyAt && patch.prepMinutes === undefined) throw new Error('Choose preparation time');
     if (order.paymentStatus === 'paid') delete updates.paymentStatus;
     if (order.sumupCheckoutId && updates.sumupCheckoutId && order.sumupCheckoutId !== updates.sumupCheckoutId) throw new Error('Checkout already attached');
     const merged = { ...order, ...updates };

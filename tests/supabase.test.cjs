@@ -9,6 +9,10 @@ test('Supabase schema: repeatable setup, restricted access, atomic counters and 
   await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
   const sql=fs.readFileSync('supabase/setup.sql','utf8');
   await db.exec(sql); await db.exec(sql);
+  await db.query("update public.choco_store set value=$1::jsonb where key='menu'",[JSON.stringify([{category:'Custom menu',items:[]}])]);
+  await db.exec(fs.readFileSync('supabase/migrations/20261016_order_preparation.sql','utf8'));
+  assert.equal((await db.query("select value from public.choco_store where key='menu'")).rows[0].value[0].category,'Custom menu');
+
   for(const role of ['anon','authenticated']) {
    const privileges=await db.query("select has_table_privilege($1,'public.choco_orders','SELECT') as read, has_function_privilege($1,'public.choco_create_order(jsonb)','EXECUTE') as create",[role]);
    assert.equal(privileges.rows[0].read,false); assert.equal(privileges.rows[0].create,false);
@@ -27,6 +31,10 @@ test('Supabase schema: repeatable setup, restricted access, atomic counters and 
   await assert.rejects(patch({totalPrice:1}),/Invalid update/);
   await patch({sumupCheckoutId:'checkout-1'});
   await patch({paymentStatus:'paid'});
+  await assert.rejects(patch({status:'preparing',prepMinutes:12}),/Invalid preparation time/);
+  const accepted=await patch({status:'preparing',prepMinutes:20});
+  assert.equal(accepted.prepMinutes,20);assert.ok(Math.abs(Date.parse(accepted.readyAt)-Date.now()-1200000)<5000);
+  await assert.rejects(patch({readyAt:'2030-01-01'}),/Invalid update/);
   const complete=await patch({status:'completed'});
   assert.equal(complete.sumupCheckoutId,'checkout-1'); assert.equal(complete.paymentStatus,'paid');
   assert.equal((await patch({paymentStatus:'failed'})).paymentStatus,'paid');

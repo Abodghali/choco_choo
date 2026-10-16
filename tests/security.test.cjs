@@ -80,3 +80,21 @@ test('unsafe URLs and malformed catalog data rejected',()=>{
  const settings=JSON.parse(fs.readFileSync(path.join(root,'src/data/settings.json'),'utf8'));
  assert.equal(validation.validSettings(settings),true); settings.instagramUrl='javascript:alert(1)'; assert.equal(validation.validSettings(settings),false);
 });
+test('add-ons priced by server and notes validated; acceptance countdown and ready status',async()=>{
+ const options=require(path.join(root,'src/lib/order-options.ts'));
+ const menu=await db.getMenu(); const extra=options.getAddOns(menu)[0]; assert.ok(extra);
+ const response=await orders.POST(req('/api/orders','POST',{...cart,items:[{id:'nutella',quantity:2,price:1,addOnIds:[extra.id],note:'  bez cukru  '}]}));
+ assert.equal(response.status,200);const {order}=await response.json();
+ assert.equal(order.totalPrice,(150+extra.price)*2);assert.equal(order.items[0].note,'bez cukru');assert.equal(order.items[0].addOns[0].id,extra.id);
+ for(const changes of [{addOnIds:['missing']},{addOnIds:[extra.id,extra.id]},{addOnIds:['nutella']},{note:'x'.repeat(501)}]) assert.throws(()=>options.buildOrderItems([{id:'nutella',quantity:1,...changes}],menu));
+ assert.equal((await orders.PUT(req('/api/orders','PUT',{orderId:order.id,status:'preparing',prepMinutes:10}))).status,401);
+ process.env.ADMIN_PASSWORD='secure-test-password';process.env.JWT_SECRET='b'.repeat(64);
+ const {signToken}=require(path.join(root,'src/lib/auth.ts'));const headers={authorization:'Bearer '+await signToken({username:'yaman'})};
+ assert.equal((await orders.PUT(req('/api/orders','PUT',{orderId:order.id,status:'preparing',prepMinutes:12},headers))).status,400);
+ const start=Date.now();
+ assert.equal((await orders.PUT(req('/api/orders','PUT',{orderId:order.id,status:'preparing',prepMinutes:15},headers))).status,200);
+ const accepted=await db.getOrder(order.id);assert.equal(accepted.status,'preparing');assert.ok(Math.abs(Date.parse(accepted.readyAt)-start-900000)<3000);
+ const read=await orders.GET(req('/api/orders?id='+order.id,'GET',undefined,{cookie:'order_access='+order.id}));const tracked=await read.json();assert.equal(tracked.prepMinutes,15);assert.equal(typeof tracked.serverNow,'number');
+ assert.equal((await orders.PUT(req('/api/orders','PUT',{orderId:order.id,status:'completed'},headers))).status,200);
+ assert.equal((await db.getOrder(order.id)).status,'completed');
+});
